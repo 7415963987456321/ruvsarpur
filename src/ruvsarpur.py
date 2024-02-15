@@ -28,31 +28,31 @@ Author: Sverrir Sigmundarson  info@sverrirs.com  https://www.sverrirs.com
 #   pip install python-levenshtein
 #      For alternative install http://stackoverflow.com/a/33163704
 
-import sys, os.path, re, time
-from os import sep
-import traceback   # For exception details
-import textwrap # For text wrapping in the console window
-from colorama import init, deinit # For colorized output to console windows (platform and shell independent)
-from termcolor import colored # For shorthand color printing to the console, https://pypi.python.org/pypi/termcolor
-from pathlib import Path # to check for file existence in the file system
-import json # To store and load the tv schedule that has already been downloaded
 import argparse # Command-line argument parser
-import requests # Downloading of data from HTTP
 import datetime # Formatting of date objects 
+import glob # Used to do partial file path matching (when searching for already downloaded files) http://stackoverflow.com/a/2225582/779521
+import json # To store and load the tv schedule that has already been downloaded
+import ntpath # Used to extract file name from path for all platforms http://stackoverflow.com/a/8384788
+import platform  # To get information about if we are running on windows or not
+import requests # Downloading of data from HTTP
+import requests # Downloading of data from HTTP
+import sys, os.path, re, time
+import textwrap # For text wrapping in the console window
+import traceback   # For exception details
+import urllib.request, urllib.parse # Downloading of data from URLs (used with the JSON parser)
+import uuid # Used to generate a ternary backup local filename if everything else fails.
+
+from colorama import init, deinit # For colorized output to console windows (platform and shell independent)
 from fuzzywuzzy import fuzz # For fuzzy string matching when trying to find programs by title or description, https://towardsdatascience.com/string-matching-with-fuzzywuzzy-e982c61f8a84
 from operator import itemgetter # For sorting the download list items https://docs.python.org/3/howto/sorting.html#operator-module-functions
-import ntpath # Used to extract file name from path for all platforms http://stackoverflow.com/a/8384788
-import glob # Used to do partial file path matching (when searching for already downloaded files) http://stackoverflow.com/a/2225582/779521
-import uuid # Used to generate a ternary backup local filename if everything else fails.
-import platform  # To get information about if we are running on windows or not
-
-import urllib.request, urllib.parse # Downloading of data from URLs (used with the JSON parser)
-import requests # Downloading of data from HTTP
+from os import sep
+from pathlib import Path # to check for file existence in the file system
+from termcolor import colored # For shorthand color printing to the console, https://pypi.python.org/pypi/termcolor
 from requests.adapters import HTTPAdapter # For Retrying
 from requests.packages.urllib3.util.retry import Retry # For Retrying
 
-import subprocess # To execute shell commands 
 from itertools import (takewhile,repeat) # To count lines for the extremely large IMDB files 
+import subprocess # To execute shell commands 
 
 # Disable SSL warnings
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
