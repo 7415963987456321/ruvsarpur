@@ -93,7 +93,10 @@ QUALITY_BITRATE = {
     "HD1080"  : { 'code': "3600", 'bits': "3550000", 'chunk_size':4000000}
 }
 
+#TODO: Move to const.py file later
 MONTH_NAMES = ['', 'jan', 'feb', 'mar', 'apr', 'maí', 'jún', 'júl', 'ágú', 'sep', 'okt', 'nóv', 'des']
+ROMAN_NUMERALS = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'] # Up to ten for now
+ICE_QUANTIFIER = ['fyrsta', 'önnur', 'þriðja', 'fjórða', 'fimmta', 'sjötta', 'sjöunda', 'áttunda', 'níunda', 'tíunda']
 
 # Parse the formats
 #   https://ruv-vod.akamaized.net/opid/5234383T0/3600/index.m3u8
@@ -803,7 +806,7 @@ def createShowTitle(show, include_original_title=False, use_plex_formatting=Fals
 
     # Append the original if it is available (usually that contains more accurate season info than the icelandic title)
     if( 'original-title' in show and not show['original-title'] is None ):
-      show_title = "{0} - {1}".format(show['series_title'], rchop(show['original-title'], [' I', ' II', ' III', ' IV', ' V', ' VI', ' VII', ' VIII', ' IX']))
+      show_title = "{0} - {1}".format(show['series_title'], rchop(show['original-title'], ROMAN_NUMERALS))
   
   # If not plex then adhere to the original title flag if set
   elif( include_original_title and 'original-title' in show and not show['original-title'] is None ):
@@ -1193,25 +1196,15 @@ def getVodSeriesSchedule(sid, _, imdb_cache, imdb_orignal_titles):
       entry['ep_total'] = str(len(prog['episodes']))
 
     # Attempt to parse out the season number, start with 1 as the default
-    entry['season_num'] = '1'
-    if str(series_title_wseason).endswith(' 2') or str(series_title_wseason).endswith(' II') or str(foreign_title).endswith(' II') or 'önnur þáttaröð' in str(entry['desc']).lower():
-      entry['season_num'] = '2'
-    elif str(series_title_wseason).endswith(' 3') or str(series_title_wseason).endswith(' III') or str(foreign_title).endswith(' III') or 'þriðja þáttaröð' in str(entry['desc']).lower():
-      entry['season_num'] = '3'
-    elif str(series_title_wseason).endswith(' 4') or str(series_title_wseason).endswith(' IV') or str(foreign_title).endswith(' IV') or 'fjórða þáttaröð' in str(entry['desc']).lower():
-      entry['season_num'] = '4'
-    elif str(series_title_wseason).endswith(' 5') or str(series_title_wseason).endswith(' V') or str(foreign_title).endswith(' V') or 'fimmta þáttaröð' in str(entry['desc']).lower():
-      entry['season_num'] = '5'
-    elif str(series_title_wseason).endswith(' 6') or str(series_title_wseason).endswith(' VI') or str(foreign_title).endswith(' VI') or 'sjötta þáttaröð' in str(entry['desc']).lower():
-      entry['season_num'] = '6'
-    elif str(series_title_wseason).endswith(' 7') or str(series_title_wseason).endswith(' VII') or str(foreign_title).endswith(' VII') or 'sjöunda þáttaröð' in str(entry['desc']).lower():
-      entry['season_num'] = '7'
-    elif str(series_title_wseason).endswith(' 8') or  str(series_title_wseason).endswith(' VIII') or str(foreign_title).endswith(' VIII') or 'áttunda þáttaröð' in str(entry['desc']).lower():
-      entry['season_num'] = '8'
-    elif str(series_title_wseason).endswith(' 9') or str(series_title_wseason).endswith(' IX') or str(foreign_title).endswith(' IX') or 'níunda þáttaröð' in str(entry['desc']).lower():
-      entry['season_num'] = '9'
-    elif str(series_title_wseason).endswith(' 10') or str(series_title_wseason).endswith(' XX') or str(foreign_title).endswith(' XX') or 'tíunda þáttaröð' in str(entry['desc']).lower():
-      entry['season_num'] = '10'
+    # Whats with all the string casting?
+    for x in range(0, 10):
+      if any([
+        str(series_title_wseason).endswith(f' {x}'),
+        str(series_title_wseason).endswith(f' {ROMAN_NUMERALS[x]}'),
+        str(foreign_title).endswith(f' {x}'),
+        f'{ICE_QUANTIFIER[x]} þáttaröð' in str(entry['desc']).lower() ]):
+        entry['season_num'] = x
+        break
 
     # Create the episode numbers programatically to ensure consistency if we're dealing with multi-episode program
     if not entry['ep_total'] is None and int(entry['ep_total']) > 1:
@@ -1251,6 +1244,7 @@ def getVodSeriesSchedule(sid, _, imdb_cache, imdb_orignal_titles):
 # Ex. Monsurnar 1 => Monsurnar   
 #     Hvolpasveitin IV => Hvolpasveitin
 def trimSeasonNumberSuffix(series_title):
+  # TODO: roman numerals
   prefixes = [' I', ' II', ' III', ' IV', ' V', ' VI', ' VII', ' VIII', ' IX', ' X', ' XI', ' XII', ' 1', ' 2', ' 3', ' 4', ' 5', ' 6', ' 7', ' 8', ' 9', ' 10', ' 11', ' 12']
   for prefix in prefixes:
     new_series_title = series_title.removesuffix(prefix)
