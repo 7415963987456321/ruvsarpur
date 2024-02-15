@@ -1244,16 +1244,14 @@ def getVodSeriesSchedule(sid, _, imdb_cache, imdb_orignal_titles):
 # Ex. Monsurnar 1 => Monsurnar   
 #     Hvolpasveitin IV => Hvolpasveitin
 def trimSeasonNumberSuffix(series_title):
-  # TODO: roman numerals
-  prefixes = [' I', ' II', ' III', ' IV', ' V', ' VI', ' VII', ' VIII', ' IX', ' X', ' XI', ' XII', ' 1', ' 2', ' 3', ' 4', ' 5', ' 6', ' 7', ' 8', ' 9', ' 10', ' 11', ' 12']
+  prefixes = ROMAN_NUMERALS + list(range(0, 12))
   for prefix in prefixes:
-    new_series_title = series_title.removesuffix(prefix)
+    new_series_title = series_title.removesuffix(f' {prefix}')
     if len(new_series_title) < len(series_title):
       return new_series_title
     series_title = new_series_title
 
   return series_title
-    
 
 
 def getGroup(regex, group_name, haystack):
