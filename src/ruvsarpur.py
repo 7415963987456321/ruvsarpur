@@ -196,21 +196,29 @@ def lookupItemInIMDB(item_title, item_year, item_type, sample_duration_sec, tota
   if item_title is None or len(item_title) < 1:
     return None
 
-  # Determine the feature type to favor
-  imdb_item_types = ['feature'] # Default
-
   # According to the oscars website > A short film is defined as an original motion picture that has a running time of 40 minutes or less, including all credits.
   # We use 45min as a safety buffer as there can be filler content before and after the films official length on the VOD.
-  if item_type == 'movie':
-    imdb_item_types = ['short'] if sample_duration_sec > 0 and sample_duration_sec < 2700 else ['feature', 'tv movie']
-  elif item_type == 'documentary':
-    imdb_item_types = ['short'] if sample_duration_sec > 0 and sample_duration_sec < 2700 else ['feature', 'tv special']
-  elif item_type == 'tvshow':
-    # We should distinguis between multi season series and mini series, 
-    # One definition > Limited series last longer, usually between 6 and 12 episodes, while a miniseries is typically 4-6 episodes, sometimes broadcast in blocks of two to create more of an event for the viewer.
-    #   > A miniseries always has a predetermined number of episodes while a series is developed to continue for several seasons.
-    imdb_item_types = ['mini-series', 'tv mini-series'] if total_episode_num > 1 and total_episode_num <= 6 else ['tv series']
-  
+  match item_type:
+    case 'movie':
+      if 0 < sample_duration_sec < 2700:
+        imdb_item_types = ['short']
+      else:
+        imdb_item_types = ['feature', 'tv movie']
+    case 'documentary':
+      if 0 < sample_duration_sec < 2700:
+        imdb_item_types = ['short']
+      else:
+        imdb_item_types = ['feature', 'tv special']
+    case 'tvshow':
+      # We should distinguish between multi-season series and mini series,
+      # One definition > Limited series last longer, usually between 6 and 12 episodes, while a miniseries is typically 4-6 episodes, sometimes broadcast in blocks of two to create more of an event for the viewer.
+      #   > A miniseries always has a predetermined number of episodes while a series is developed to continue for several seasons.
+      imdb_item_types = ['mini-series', 'tv mini-series'] if 1 < total_episode_num <= 6 else ['tv series']
+    case _:
+      # Determine the feature type to favor
+      imdb_item_types = ['feature'] # Default
+
+
   try:
     r = __create_retry_session().get(f"https://v2.sg.media-imdb.com/suggestion/x/{urllib.parse.quote(item_title)}.json?includeVideos=1")
     if( r.status_code != 200 ): 
