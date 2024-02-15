@@ -62,19 +62,19 @@ import utilities
 
 # Lambdas as shorthands for printing various types of data
 # See https://pypi.python.org/pypi/termcolor for more info
-color_title = lambda x: colored(x, 'cyan', 'on_grey')
-color_pid_title = lambda x: colored(x, 'red', 'on_cyan')
-color_pid = lambda x: colored(x, 'red')
-color_sid = lambda x: colored(x, 'yellow')
+color_title       = lambda x: colored(x, 'cyan',   'on_grey')
+color_pid_title   = lambda x: colored(x, 'red',    'on_cyan')
+color_pid         = lambda x: colored(x, 'red')
+color_sid         = lambda x: colored(x, 'yellow')
 color_description = lambda x: colored(x, 'white')
 
 color_error = lambda x: colored(x, 'red')
-color_warn = lambda x: colored(x, 'yellow')
-color_info = lambda x: colored(x, 'cyan')
+color_warn  = lambda x: colored(x, 'yellow')
+color_info  = lambda x: colored(x, 'cyan')
 
-color_progress_fill = lambda x: colored(x, 'green')
+color_progress_fill      = lambda x: colored(x, 'green')
 color_progress_remaining = lambda x: colored(x, 'white')
-color_progress_percent = lambda x: colored(x, 'green')
+color_progress_percent   = lambda x: colored(x, 'green')
 
 # The name of the directory used to store log files.  The directory will be located in the users home directory
 LOG_DIR="{0}/{1}".format(os.path.expanduser('~'),'.ruvsarpur')
