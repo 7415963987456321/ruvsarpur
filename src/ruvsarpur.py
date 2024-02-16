@@ -97,6 +97,7 @@ QUALITY_BITRATE = {
 MONTH_NAMES = ['', 'jan', 'feb', 'mar', 'apr', 'maí', 'jún', 'júl', 'ágú', 'sep', 'okt', 'nóv', 'des']
 ROMAN_NUMERALS = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'] # Up to ten for now
 ICE_QUANTIFIER = ['fyrsta', 'önnur', 'þriðja', 'fjórða', 'fimmta', 'sjötta', 'sjöunda', 'áttunda', 'níunda', 'tíunda']
+USER_AGENT_HEADER = {'User-Agent':'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36'}
 
 # Parse the formats
 #   https://ruv-vod.akamaized.net/opid/5234383T0/3600/index.m3u8
@@ -432,10 +433,6 @@ def __create_retry_session(retries=5):
 
 # Attempts to discover the correct playlist file
 def find_m3u8_playlist_url(item, display_title, video_quality):
-  
-  # use default headers
-  headers = {'User-Agent':'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36'}
-
   # Store the program id
   pid = item['pid']
 
@@ -462,7 +459,7 @@ def find_m3u8_playlist_url(item, display_title, video_quality):
 
   try:
     # Perform the first get
-    request = __create_retry_session().get(url_first_file, stream=False, timeout=5, verify=False, headers=headers)
+    request = __create_retry_session().get(url_first_file, stream=False, timeout=5, verify=False, headers=USER_AGENT_HEADER)
     if request is None or not request.status_code == 200 or len(request.text) <= 0:
       print( "{0} not found on server (first file, pid={1}, url={2})".format(color_title(display_title), pid, url_first_file))
       return None
@@ -475,7 +472,7 @@ def find_m3u8_playlist_url(item, display_title, video_quality):
       url_formatted = '{0}/asset-audio=50000-video={1}.m3u8'.format(item['vod_url'], QUALITY_BITRATE[video_quality]['bits'])       
 
     # Do the second request to get the actual stream data in the correct format
-    request = __create_retry_session().get(url_formatted, stream=False, timeout=5, verify=False, headers=headers)
+    request = __create_retry_session().get(url_formatted, stream=False, timeout=5, verify=False, headers=USER_AGENT_HEADER)
     if request is None or not request.status_code == 200 or len(request.text) <= 0:
       print( "{0} not found on server (second file, pid={1}, url={2})".format(color_title(display_title), pid, url_formatted))
       return None
