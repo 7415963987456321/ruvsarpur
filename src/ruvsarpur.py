@@ -230,10 +230,10 @@ def lookupItemInIMDB(item_title, item_year, item_type, sample_duration_sec, tota
   data = r.json()
 
   # If no results then exit
-  if not 'd' in data or data['d'] is None or len(data['d']) < 1:
+  if not data.get('d', None) or len(data['d'] < 1):
     return None
 
-  # We remove all matches that do not have a covery photo, unlikely that it is going to be a great match
+  # We remove all matches that do not have a cover photo, unlikely that it is going to be a great match
   # also remove matches that do not have any actors starring in it
   matches = [obj for obj in data['d'] if 'i' in obj and 'q' in obj and 's' in obj and len(obj['s']) > 2 and str(obj['id']).startswith('tt')]
   num_matches = len(matches)
@@ -243,8 +243,8 @@ def lookupItemInIMDB(item_title, item_year, item_type, sample_duration_sec, tota
   # Augment the remaining matches with their original titles from the titles cache if it is available
   if not imdb_orignal_titles is None and len(imdb_orignal_titles) > 0:
     for m in matches:
-      org_title = imdb_orignal_titles[m['id']] if m['id'] in imdb_orignal_titles else None
-      if not org_title is None:
+      org_title = imdb_orignal_titles.get(m['id'], None)
+      if org_title is not None:
         m['lo'] = org_title
 
   result = None
@@ -283,13 +283,16 @@ def lookupItemInIMDB(item_title, item_year, item_type, sample_duration_sec, tota
     result = next((obj for obj in matches if 'lo' in obj and fuzz.ratio( item_title_lower, obj['lo'].lower() ) > 85 and 'q' in obj and str(obj['q']).lower() in imdb_item_types), None)
     found_via = "Similar original title and type, first match"
 
+
+
+
   # Still no match, attempt to find one with a matching year if it is specified
   if result is None and not item_year is None: 
     result = next((obj for obj in matches if 'q' in obj and str(obj['q']).lower() in imdb_item_types and 'y' in obj and item_year in str(obj['y'])), None)
     found_via = "Same type and year, first match"
 
   # If there is only a single element in the list then it is likely to be it, for Icelandic movies this is very often the case
-  if result is None and num_matches == 1:
+  if result is None and len(matches) == 1:
     result = next((obj for obj in matches if 'q' in obj and str(obj['q']).lower() in imdb_item_types), None)
     found_via = "Only result"
 
@@ -302,10 +305,10 @@ def lookupItemInIMDB(item_title, item_year, item_type, sample_duration_sec, tota
     return None
 
   ret_obj = {
-    "id": result['id'] if 'id' in result else None,
-    "title": result['l'] if 'l' in result else None,
-    "actors": result['s'] if 's' in result else None,
-    "year": result['y'] if 'y' in result else None,
+    "id":     result.get('id', None),
+    "title":  result.get('l',  None),
+    "actors": result.get('s',  None),
+    "year":   result.get('y',  None),
     "image" : result['i']['imageUrl'] if 'i' in result and 'imageUrl' in result['i'] else None,
     "foundvia": found_via
   }
@@ -339,9 +342,9 @@ def downloadMoviePoster(local_filename, display_title, item, output_path):
   
 
 # Downloads the image and season posters for episodic content
-def downloadTVShowPoster(local_filename, display_title, item, output_path):
-  episode_poster_url = item['episode_image'] if 'episode_image' in item and not item['episode_image'] is None else None
-  series_poster_url = item['portrait_image'] if 'portrait_image' in item and not item['portrait_image'] is None else item['series_image'] if 'series_image' in item and not item['series_image'] is None else None
+def downloadTVShowPoster(local_filename, item, output_path):
+  episode_poster_url = item.get('episode_image', None)
+  series_poster_url = item.get('portrait_image', item.get('series_image', None))
 
   # Download the episode poster
   if not episode_poster_url is None:
@@ -350,7 +353,7 @@ def downloadTVShowPoster(local_filename, display_title, item, output_path):
     download_file(episode_poster_url, episode_poster_filename, f"Episode artwork for {item['title']}")
 
   # Download the series poster  
-  if not series_poster_url is None: 
+  if series_poster_url:
     series_poster_dir = Path(local_filename).parent.parent.absolute() # Go up one directory (i.e. not in Season01 but in the main series folder)
 
     # If the poster dir is the root directory we do not want to save the poster there
