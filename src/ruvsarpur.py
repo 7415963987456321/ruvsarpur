@@ -192,7 +192,7 @@ def printProgress (iteration, total, prefix = '', suffix = '', decimals = 1, bar
 #              }
 #            ],
 #}
-def lookupItemInIMDB(item_title, item_year, item_type, sample_duration_sec, total_episode_num, isIcelandic, imdb_orignal_titles):
+def lookupItemInIMDB(item_title, item_year, item_type, sample_duration_sec, total_episode_num, imdb_orignal_titles):
   if item_title is None or len(item_title) < 1:
     return None
 
@@ -260,11 +260,6 @@ def lookupItemInIMDB(item_title, item_year, item_type, sample_duration_sec, tota
     result = next((obj for obj in matches if 'lo' in obj and item_title_lower == obj['lo'].lower()), None)
     found_via = "Exact original title"
 
-  # Special case for icelandic movies, they are extremly likely to be the first result if searched by the icelandic name
-  #if isIcelandic and item_type == 'movie':
-  #  result = matches[0]
-  #  found_via = "First match (Icelandic Movie)"
-
   # If there is a single slightly fuzzy name match, we pick that
   if result is None and 1 == sum(('l' in obj and fuzz.ratio( item_title_lower, obj['l'].lower() ) > 85) for obj in matches):
     result = next((obj for obj in matches if 'l' in obj and fuzz.ratio( item_title_lower, obj['l'].lower() ) > 85), None)
@@ -274,6 +269,9 @@ def lookupItemInIMDB(item_title, item_year, item_type, sample_duration_sec, tota
   if result is None and 1 == sum(('lo' in obj and fuzz.ratio( item_title_lower, obj['lo'].lower() ) > 85) for obj in matches):
     result = next((obj for obj in matches if 'lo' in obj and fuzz.ratio( item_title_lower, obj['lo'].lower() ) > 85), None)
     found_via = "Similar original title, single match"
+
+
+
 
   # Attempt to find a match in the list with a similar name and type
   if result is None:
@@ -1088,9 +1086,6 @@ def getVodSeriesSchedule(sid, _, imdb_cache, imdb_orignal_titles):
   total_episodes = len(prog['episodes'])
   imdb_result = None
 
-  # Is it icelandic?
-  isIcelandic = str(series_description).lower().startswith('íslensk')
-
   # First check to see if the series sid is present in the imdb_cache file
   # if it is then we already have our imdb data, if not then we have to look it up
   if not imdb_cache is None and str(sid) in imdb_cache:
@@ -1114,13 +1109,13 @@ def getVodSeriesSchedule(sid, _, imdb_cache, imdb_orignal_titles):
     imdb_result = None
     # first check the foreign title, this is most likely to result in a match
     if imdb_result is None and not foreign_title is None:
-      imdb_result = lookupItemInIMDB(foreign_title, series_year, series_type, sample_duration_sec, total_episode_num, isIcelandic, imdb_orignal_titles)
+      imdb_result = lookupItemInIMDB(foreign_title, series_year, series_type, sample_duration_sec, total_episode_num, imdb_orignal_titles)
 
     # Icheck the local title AND ONLY IF THIS IS A MOVIE.
     # this condition will be mostly true for icelandic movies and documentaries, this is also true when RUV incorrectly enters their data
     #  and places the english name in the series and the icelandic name in the foreign title!, which is very common.
     if imdb_result is None and not series_title is None and isMovie:
-      imdb_result = lookupItemInIMDB(series_title, series_year, series_type, sample_duration_sec, total_episode_num, isIcelandic, imdb_orignal_titles)
+      imdb_result = lookupItemInIMDB(series_title, series_year, series_type, sample_duration_sec, total_episode_num, imdb_orignal_titles)
 
     # If the imdb result was found then store it in the corrections file for later reuse
     if not imdb_result is None:
