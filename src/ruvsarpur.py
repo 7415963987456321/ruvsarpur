@@ -704,9 +704,9 @@ def parseArguments():
 # Appends the config directory to config file names
 def createFullConfigFileName(portable, file_name):
   if portable :
-    return "./{0}".format(file_name)
+    return f"./{file_name}"
   else:
-    return "{0}/{1}".format(LOG_DIR,file_name)
+    return f"{LOG_DIR}/{file_name}"
 
 # Saves a list of program ids to a file
 def appendNewPidAndSavePreviouslyRecordedShows(new_pid, previously_recorded_pids, rec_file_name):
