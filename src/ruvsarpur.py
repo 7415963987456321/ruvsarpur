@@ -922,17 +922,13 @@ RE_CAPTURE_VOD_EPNUM_FROM_TITLE = re.compile(r'(?P<ep_num>\d+) af (?P<ep_total>\
 # Downloads the full front page VOD schedule and for each episode in there fetches all available episodes
 # uses the new RUV GraphQL queries
 def getVodSchedule(existing_schedule, imdb_cache=None, imdb_orignal_titles=None):
-
   # Start with getting all the series available on RUV through their API, this gives us basic information about each of the series
   # Now for each series we request the series information, to obtain more than the basic info,
-
-  args_incremental_refresh = len(existing_schedule) > 0
 
   r = __create_retry_session().get(RUV_API_URL_ALL)
   api_data = r.json()
 
   # Now the api returns everything categorised into panels
-  all_panel_data = api_data['panels'] if 'panels' in api_data else None
   all_panel_data = api_data.get('panels', [])
   data = []
   # Combine all
@@ -943,44 +939,36 @@ def getVodSchedule(existing_schedule, imdb_cache=None, imdb_orignal_titles=None)
   # Remove all duplicate series from the list
   data = list({item['id']:item for item in data}.values())
 
-  schedule = {}
-
   # If we are dealing with incremental refresh then start by storing our existing schedule
-  if args_incremental_refresh:
+  incremental_refresh = len(existing_schedule) > 0
+  if incremental_refresh:
     schedule = existing_schedule
+  else:
+    schedule = {}
 
-  if r.status_code != 200  or data is None or len(data) < 1:
+  if r.status_code != 200 or not data or len(data) <= 0:
     return schedule
 
-  if not data or len(data) <=0:
-    return schedule
-
-  # Filter out all programs that do not have any vod files to download and have an id field
+  # Filter out all programs that do not have any VOD files to download and have an id field
   panels = [p for p in data if 'web_available_episodes' in p and 'id' in p and p['web_available_episodes'] > 0]
 
-  completed_programs = 0
   total_programs = len(panels)
 
-  print("{0} | Total: {1} series available".format(color_title('Downloading VOD schedule'), total_programs))
-  printProgress(completed_programs, total_programs, prefix = 'Reading:', suffix = '', barLength = 25)
+  print(f"{color_title('Downloading VOD schedule')} | Total: {total_programs} series available")
+  printProgress(0, total_programs, prefix = 'Reading:', barLength = 25)
 
   # Now iterate first through every group and for every thing in the group request all episodes for that
   # item (there is no programmatic way of distinguishing between how many episodes there are)
-  for program in panels:
-    completed_programs += 1
-
-    #if str(program['id']) != '32957':
-    #  continue
-
+  for completed_programs, program in enumerate(panels):
     # If incremental, then check if we already have this series if we don't we want to add it,
     # if we have the series check if the web_available_episodes match if not then we want to re-add it
-    if args_incremental_refresh:
+    if incremental_refresh:
       existing_vod_episodes_count = sum(type(schedule[p]) is dict and schedule[p]['sid'] == str(program['id']) for p in schedule)
-      if( program['web_available_episodes'] <= existing_vod_episodes_count and existing_vod_episodes_count > 0 ):
+      if 0 < program['web_available_episodes'] <= existing_vod_episodes_count:
         continue
       else:
         existing_vs_new_diff = program['web_available_episodes'] - existing_vod_episodes_count
-        printProgress(completed_programs, total_programs, prefix = 'Detected {0} new entries for {1}:'.format(existing_vs_new_diff, color_sid(program['title'])), suffix ='', barLength = 25)
+        printProgress(completed_programs, total_programs, prefix = f"Detected {existing_vs_new_diff}, new entries for {color_sid(program['title'])}:", barLength = 25)
 
     # Add all details for the given program to the schedule
     try:
@@ -994,9 +982,10 @@ def getVodSchedule(existing_schedule, imdb_cache=None, imdb_orignal_titles=None)
         print( "Unable to retrieve schedule for VOD program '{0}', no episodes will be available for download from this program.".format(program['title']))
         print(traceback.format_exc())
         continue
-    printProgress(completed_programs, total_programs, prefix = 'Reading:', suffix ='', barLength = 25)
+    printProgress(completed_programs, total_programs, prefix = 'Reading:', barLength = 25)
 
   return schedule
+
 
 def requestsVodDataRetrieveWithRetries(graphdata):
   retries_left = 3
