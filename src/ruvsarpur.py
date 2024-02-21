@@ -113,6 +113,8 @@ RE_VOD_BASE_URL = re.compile(r'(?P<vodbase>.*)\/(?P<rest>.*\.m3u8)', re.IGNORECA
 
 RUV_URL = 'https://ruv-vod.akamaized.net'
 
+RUV_API_URL_ALL = 'https://api.ruv.is/api/programs/featured/tv'
+
 # Function to count lines in very large files efficiently, see: https://stackoverflow.com/a/27517681/779521
 def countLinesInFile(filename):
     with open(filename, 'rb') as f:
@@ -919,24 +921,19 @@ RE_CAPTURE_VOD_EPNUM_FROM_TITLE = re.compile(r'(?P<ep_num>\d+) af (?P<ep_total>\
 #
 # Downloads the full front page VOD schedule and for each episode in there fetches all available episodes
 # uses the new RUV GraphQL queries
-def getVodSchedule(existing_schedule, args_incremental_refresh=False, imdb_cache=None, imdb_orignal_titles=None):
+def getVodSchedule(existing_schedule, imdb_cache=None, imdb_orignal_titles=None):
 
   # Start with getting all the series available on RUV through their API, this gives us basic information about each of the series
-  # https://api.ruv.is/api/programs/tv/all
-  # as of 2024-01-15 this API is now
-  # https://api.ruv.is/api/programs/featured/tv
-
   # Now for each series we request the series information, to obtain more than the basic info,
-  # note: today there is a single episode returned which cannot be used when dealing with multi episode series, we should request all episodes as a second call
-  # https://api.ruv.is/api/programs/get_ids/32978
 
-  ruv_api_url_all = 'https://api.ruv.is/api/programs/featured/tv'
-  r = __create_retry_session().get(ruv_api_url_all)
+  args_incremental_refresh = len(existing_schedule) > 0
+
+  r = __create_retry_session().get(RUV_API_URL_ALL)
   api_data = r.json()
 
   # Now the api returns everything categorised into panels
-  all_panel_data= api_data['panels'] if 'panels' in api_data else None
-
+  all_panel_data = api_data['panels'] if 'panels' in api_data else None
+  all_panel_data = api_data.get('panels', [])
   data = []
   # Combine all
   for panel_data in all_panel_data:
@@ -1359,7 +1356,7 @@ def runMain():
         schedule = {}
 
       # Downloading the full VOD available schedule as well, signal an incremental update if the schedule object has entries in it
-      schedule = getVodSchedule(schedule, len(schedule) > 0, imdb_cache, imdb_orignal_titles)
+      schedule = getVodSchedule(schedule, imdb_cache, imdb_orignal_titles)
 
       # Save the tv schedule as the most current one, save it to ensure we format the today date
       saveCurrentTvSchedule(schedule, tv_schedule_file_name)
