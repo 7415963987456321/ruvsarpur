@@ -85,6 +85,9 @@ TV_SCHEDULE_LOG_FILE = 'tvschedule.json'
 # Name of the file containing cache to imdb series and movies matches
 IMDB_CACHE_FILE = 'imdb-cache.json'
 
+# Get the current working directory (place that the script is executing from)
+CWD = sys.path[0]
+
 # The available bitrate streams
 QUALITY_BITRATE = {
     "Normal"  : { 'code': "1200", 'bits': "1150000", 'chunk_size':1500000},
@@ -489,7 +492,11 @@ def find_m3u8_playlist_url(item, display_title, video_quality):
     return None
 
 # FFMPEG download of the playlist
-def download_m3u8_playlist_using_ffmpeg(ffmpegexec, playlist_url, playlist_fragments, local_filename, display_title, keeppartial, video_quality, disable_metadata, videoInfo):
+def download_m3u8_playlist_using_ffmpeg(playlist_url, playlist_fragments, local_filename, display_title, args, videoInfo):
+
+  # Get ffmpeg exec
+  ffmpegexec = findffmpeg(args.ffmpeg, CWD)
+
   prog_args = [ffmpegexec]
 
   # Don't show copyright header
@@ -497,10 +504,10 @@ def download_m3u8_playlist_using_ffmpeg(ffmpegexec, playlist_url, playlist_fragm
 
   # Don't show excess logging (only things that cause the exe to terminate)
   prog_args.append("-loglevel")
-  prog_args.append("verbose") 
-  
+  prog_args.append("verbose")
+
   # Force showing progress indicator text
-  prog_args.append("-stats") 
+  prog_args.append("-stats")
 
   # Overwrite any prompts with YES
   prog_args.append("-y")
@@ -517,21 +524,21 @@ def download_m3u8_playlist_using_ffmpeg(ffmpegexec, playlist_url, playlist_fragm
 
   # Create the metadata for the output file (note: This must appear after the input source, above, is defined)
   # see https://kdenlive.org/en/project/adding-meta-data-to-mp4-video/ and https://kodi.wiki/view/Video_file_tagging
-  if not disable_metadata:
+  if not args.disable_metadata:
 
     # Determine the description for the file
     ep_description = ''
 
     # Find the series description and favour the longer description
-    series_description = videoInfo['desc'] if videoInfo['desc'] is not None else videoInfo['series_desc'] if 'series_desc' in videoInfo  else None
-    if 'series_sdesc' in videoInfo and videoInfo['series_sdesc'] is not None:
-      if( series_description is None or (videoInfo['series_sdesc'] is not None and len(videoInfo['series_sdesc']) > len(series_description))):
+    series_description = videoInfo.get('desc', videoInfo.get('series_desc', None))
+    if videoInfo.get('series_sdesc', None) is not None:
+      if series_description is None or (len(videoInfo['series_sdesc'] > len(series_description) )):
         series_description = videoInfo['series_sdesc']
 
     # Description for movies, we want the longer version of
     if videoInfo['is_movie'] or videoInfo['is_docu']:
       ep_description = series_description
-    
+
     # Description for epsiodic content (do not use the series description)
     if len(ep_description) <= 0 and 'description' in videoInfo['episode'] and len(videoInfo['episode']['description']) > 4 :
       ep_description = videoInfo['episode']['description']
@@ -544,9 +551,8 @@ def download_m3u8_playlist_using_ffmpeg(ffmpegexec, playlist_url, playlist_fragm
       ep_description = f"{ep_description.rstrip('.')}. Sýnt {str(videoInfo['showtime'])[8:10]}.{str(videoInfo['showtime'])[5:7]}.{str(videoInfo['showtime'])[:4]} kl.{(videoInfo['showtime'][11:16]).replace(':','.')}"
 
     prog_args.append("-metadata")
-    prog_args.append("{0}={1}".format('title', sanitizeFileName(videoInfo['title'] if videoInfo['is_movie'] or videoInfo['is_docu'] or videoInfo['is_sport'] else videoInfo['episode_title']) )) #The title of this video. (String)	
+    prog_args.append("{0}={1}".format('title', sanitizeFileName(videoInfo['title'] if ['is_movie', 'is_docu', 'is_sport', ] in videoInfo else videoInfo['episode_title']) )) #The title of this video. (String)	
     prog_args.append("-metadata")
-    #prog_args.append("{0}={1}".format('comment', sanitizeFileName(videoInfo['desc']) ))  #A (content) description of this video.
     prog_args.append("{0}={1}".format('comment', 'ruvinfo:{0}:{1}'.format(str(videoInfo['pid']), str(videoInfo['sid']))))  #The program id and series id for the video, prefixed with ruvinfo for easier parsing
     prog_args.append("-metadata")
     prog_args.append("{0}={1}".format('synopsis', sanitizeFileName(ep_description) ))  #A synopsis, a longer description of this video
@@ -581,7 +587,7 @@ def download_m3u8_playlist_using_ffmpeg(ffmpegexec, playlist_url, playlist_fragm
     #prog_args.append("{0}={1}".format('ruvpid', str(videoInfo['pid'])))  #Program identifier
     #prog_args.append("-metadata")
     #prog_args.append("{0}={1}".format('ruvsid', str(videoInfo['sid'])))  #Season identifier
-    
+
   # Finally the output file path
   prog_args.append(local_filename)
 
@@ -593,7 +599,7 @@ def download_m3u8_playlist_using_ffmpeg(ffmpegexec, playlist_url, playlist_fragm
   # Some counting for progress bars
   total_chunks = playlist_fragments
   completed_chunks = 0
-  total_size = QUALITY_BITRATE[video_quality]['chunk_size'] * total_chunks
+  total_size = QUALITY_BITRATE[args.video_quality]['chunk_size'] * total_chunks
   total_size_mb = str(int(total_size/1024.0/1024.0))
 
   print("{0} | Estimated: {1} MB".format(color_title(display_title), total_size_mb))
@@ -1335,14 +1341,8 @@ def runMain():
     
     today = datetime.date.today()
 
-    # Get the current working directory (place that the script is executing from)
-    working_dir = sys.path[0]
-    
     # Construct the argument parser for the commandline
     args = parseArguments()
-
-    # Get ffmpeg exec
-    ffmpegexec = findffmpeg(args.ffmpeg, working_dir)
 
     # Create the full filenames for the config files
     previously_recorded_file_name = createFullConfigFileName(args.portable,PREV_LOG_FILE)
@@ -1536,7 +1536,7 @@ def runMain():
 
         #print(playlist_data
         # Now ask FFMPEG to download and remux all the fragments for us
-        result = download_m3u8_playlist_using_ffmpeg(ffmpegexec, playlist_data['url'], playlist_data['fragments'], local_filename, display_title, args.keeppartial, args.quality, args.nometadata, item)
+        result = download_m3u8_playlist_using_ffmpeg(playlist_data['url'], playlist_data['fragments'], local_filename, display_title, args, item)
         if( not result is None ):
           # if everything was OK then save the pid as successfully downloaded
           appendNewPidAndSavePreviouslyRecordedShows(item['pid'], previously_recorded, previously_recorded_file_name) 
