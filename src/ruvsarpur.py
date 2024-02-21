@@ -1028,8 +1028,9 @@ def formatCoverArtResolutionMacro(rawsrc):
 def getVodSeriesSchedule(sid, _, imdb_cache, imdb_orignal_titles):
   schedule = {}
 
-  # Perform two lookups, first to the API as this gives us a more complete information about the series, but unfortunately no episode data
-  ruv_api_url_sid = 'https://api.ruv.is/api/programs/program/{0}/all'.format(sid)
+  # Perform two lookups, first to the API as this gives us a more complete
+  # information about the series, but unfortunately no episode data
+  ruv_api_url_sid = f"https://api.ruv.is/api/programs/program/{sid}/all"
 
   r = __create_retry_session().get(ruv_api_url_sid)
   prog = r.json()
