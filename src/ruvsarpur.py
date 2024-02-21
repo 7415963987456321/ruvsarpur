@@ -42,6 +42,7 @@ import traceback   # For exception details
 import urllib.request, urllib.parse # Downloading of data from URLs (used with the JSON parser)
 import uuid # Used to generate a ternary backup local filename if everything else fails.
 
+from typing import Any
 from colorama import init, deinit # For colorized output to console windows (platform and shell independent)
 from fuzzywuzzy import fuzz # For fuzzy string matching when trying to find programs by title or description, https://towardsdatascience.com/string-matching-with-fuzzywuzzy-e982c61f8a84
 from operator import itemgetter # For sorting the download list items https://docs.python.org/3/howto/sorting.html#operator-module-functions
@@ -116,7 +117,7 @@ RUV_URL = 'https://ruv-vod.akamaized.net'
 RUV_API_URL_ALL = 'https://api.ruv.is/api/programs/featured/tv'
 
 # Function to count lines in very large files efficiently, see: https://stackoverflow.com/a/27517681/779521
-def countLinesInFile(filename):
+def countLinesInFile(filename: str) -> int:
     with open(filename, 'rb') as f:
       bufgen = takewhile(lambda x: x, (f.raw.read(1024*1024) for _ in repeat(None)))
       return sum( buf.count(b'\n') for buf in bufgen if buf )
@@ -126,7 +127,7 @@ def countLinesInFile(filename):
 # Example:
 #     isFileOlderThan(filename, timedelta(seconds=10))
 #     isFileOlderThan(filename, timedelta(days=14))
-def isFileOlderThan(file, delta):
+def isFileOlderThan(file: str, delta: datetime.timedelta) -> bool:
     cutoff = datetime.datetime.utcnow() - delta
     mtime = datetime.datetime.utcfromtimestamp(os.path.getmtime(file))
     if mtime < cutoff:
@@ -135,7 +136,7 @@ def isFileOlderThan(file, delta):
 
 # Print console progress bar
 # http://stackoverflow.com/a/34325723
-def printProgress (iteration, total, prefix = '', suffix = '', decimals = 1, barLength = 100, color = True):
+def printProgress(iteration: int, total: int, prefix = '', suffix = '', decimals = 1, barLength = 100, color = True) -> None:
   try:
     """
     Call in a loop to create terminal progress bar
@@ -197,7 +198,7 @@ def printProgress (iteration, total, prefix = '', suffix = '', decimals = 1, bar
 #              }
 #            ],
 #}
-def lookupItemInIMDB(item_title, item_year, item_type, sample_duration_sec, total_episode_num, imdb_orignal_titles):
+def lookupItemInIMDB(item_title:str, item_year, item_type:str, sample_duration_sec:int, total_episode_num:int, imdb_orignal_titles) -> dict[str,str] | None:
   if item_title is None or len(item_title) < 1:
     return None
 
@@ -329,7 +330,7 @@ def lookupItemInIMDB(item_title, item_year, item_type, sample_duration_sec, tota
 
 # Downloads the image poster for a movie
 # See naming guidelines: https://support.plex.tv/articles/200220677-local-media-assets-movies/#toc-2
-def downloadMoviePoster(local_filename, item, output_path):
+def downloadMoviePoster(local_filename:str, item: dict[str,str], output_path) -> None:
   poster_url = item.get('portrait_image', item.get('series_image', None))
 
   if not poster_url:
@@ -347,7 +348,7 @@ def downloadMoviePoster(local_filename, item, output_path):
   download_file(poster_url, poster_filename, f"Movie artwork for {item['title']}")
 
 # Downloads the image and season posters for episodic content
-def downloadTVShowPoster(local_filename, item, output_path):
+def downloadTVShowPoster(local_filename:str, item:dict[str,str], output_path) -> None:
   episode_poster_url = item.get('episode_image', None)
   series_poster_url = item.get('portrait_image', item.get('series_image', None))
 
@@ -369,7 +370,7 @@ def downloadTVShowPoster(local_filename, item, output_path):
         download_file(series_poster_url, series_poster_filename, f"Series artwork for {item['series_title']}")
 
 # Downloads all available subtitle files
-def downloadSubtitlesFiles(subtitles, local_video_filename):
+def downloadSubtitlesFiles(subtitles, local_video_filename:str):
   for subtitle in subtitles:
     # See naming guidelines https://support.plex.tv/articles/200471133-adding-local-subtitles-to-your-media/
     subtitle_filename = "{0}.{1}.vtt".format( local_video_filename.split(".mp4")[0], subtitle['name'])
@@ -377,7 +378,7 @@ def downloadSubtitlesFiles(subtitles, local_video_filename):
 
 # Downloads a file using Requests
 # From: http://stackoverflow.com/a/16696317
-def download_file(url, local_filename, display_title, keeppartial = False ):
+def download_file(url:str, local_filename:str, display_title:str, keeppartial = False ) -> str | None:
   # TODO: note that display_title is not really used, would like to
   # keep it for logging purposes later
   try:
@@ -423,7 +424,7 @@ def __create_retry_session(retries=5):
   return session
 
 # Attempts to discover the correct playlist file
-def find_m3u8_playlist_url(item, display_title, video_quality):
+def find_m3u8_playlist_url(item, display_title:str, video_quality:str) -> dict[str, str|int] | None:
   # Store the program id
   pid = item['pid']
 
@@ -481,7 +482,7 @@ def find_m3u8_playlist_url(item, display_title, video_quality):
     return None
 
 # FFMPEG download of the playlist
-def download_m3u8_playlist_using_ffmpeg(playlist_url, playlist_fragments, local_filename, display_title, args, videoInfo):
+def download_m3u8_playlist_using_ffmpeg(playlist_url:str, playlist_fragments, local_filename:str, display_title:str, args, videoInfo) -> str | None:
 
   # Get ffmpeg exec
   ffmpegexec = findffmpeg(args.ffmpeg, CWD)
@@ -628,7 +629,7 @@ def download_m3u8_playlist_using_ffmpeg(playlist_url, playlist_fragments, local_
     return local_filename
   return None
 
-def printTvShowDetails(args, show):
+def printTvShowDetails(args, show: dict[str,str]) -> None:
   if( not 'pid' in show ):
     return
 
@@ -704,14 +705,14 @@ def parseArguments():
   return parser.parse_args()
 
 # Appends the config directory to config file names
-def createFullConfigFileName(portable, file_name):
+def createFullConfigFileName(portable: bool, file_name:str) -> str:
   if portable :
     return f"./{file_name}"
   else:
     return f"{LOG_DIR}/{file_name}"
 
 # Saves a list of program ids to a file
-def appendNewPidAndSavePreviouslyRecordedShows(new_pid, previously_recorded_pids, rec_file_name):
+def appendNewPidAndSavePreviouslyRecordedShows(new_pid:str, previously_recorded_pids: list[str], rec_file_name:str) -> None:
 
   # Store the new pid in memory first
   previously_recorded_pids.append(new_pid)
@@ -724,7 +725,7 @@ def appendNewPidAndSavePreviouslyRecordedShows(new_pid, previously_recorded_pids
       theFile.write("%s\n" % item)
 
 # Gets a list of program ids from a file
-def getPreviouslyRecordedShows(rec_file_name):
+def getPreviouslyRecordedShows(rec_file_name:str) -> list[str]:
   rec_file = Path(rec_file_name)
   if rec_file.is_file():
     lines = [line.rstrip('\n') for line in rec_file.open('r+')]
@@ -732,7 +733,7 @@ def getPreviouslyRecordedShows(rec_file_name):
   else:
     return []
 
-def saveCurrentTvSchedule(schedule, tv_file_name):
+def saveCurrentTvSchedule(schedule: dict[str,str], tv_file_name:str) -> None:
   if len(schedule) <= 1:
     return
 
@@ -745,7 +746,7 @@ def saveCurrentTvSchedule(schedule, tv_file_name):
   with open(tv_file_name, 'w+', encoding='utf-8') as out_file:
     out_file.write(json.dumps(schedule, ensure_ascii=False, sort_keys=True, indent=2*' '))
 
-def saveImdbCache(imdb_cache, imdb_cache_file_name):
+def saveImdbCache(imdb_cache, imdb_cache_file_name: str) -> None:
   if len(imdb_cache) <= 0:
     return
 
@@ -754,7 +755,7 @@ def saveImdbCache(imdb_cache, imdb_cache_file_name):
   with open(imdb_cache_file_name, 'w+', encoding='utf-8') as out_file:
     out_file.write(json.dumps(imdb_cache, ensure_ascii=False, sort_keys=True, indent=2*' '))
 
-def getExistingJsonFile(file_name):
+def getExistingJsonFile(file_name:str) -> Any | None:
   try:
     tv_file = Path(file_name)
     if tv_file.is_file():
@@ -768,7 +769,7 @@ def getExistingJsonFile(file_name):
     print(f"Could not open '{file_name}', {ex})")
     return None
 
-def getExistingTvSchedule(tv_file_name):
+def getExistingTvSchedule(tv_file_name:str) -> Any | None:
   try:
     tv_file = Path(tv_file_name)
     if tv_file.is_file():
@@ -785,13 +786,13 @@ def getExistingTvSchedule(tv_file_name):
     print("Could not open existing tv schedule, downloading new one (invalid file at "+tv_file_name+")")
     return None
 
-def sanitizeFileName(local_filename, sep=" "):
+def sanitizeFileName(local_filename:str, sep=" ") -> str:
   #These are symbols that are not "kosher" on a NTFS filesystem.
   local_filename = re.sub(r"[\"/:<>|?*\n\r\t\x00]", sep, local_filename)
   return local_filename.strip()
 
 # Removes a substring from end of string, see https://stackoverflow.com/a/3663505/779521
-def rchop(s, suffix):
+def rchop(s:str, suffix:list[str]) -> str:
   if not type(suffix) is list:
     suffix = [suffix]
   for suff in suffix:
@@ -799,7 +800,7 @@ def rchop(s, suffix):
         return s[:-len(suff)]
   return s
 
-def createShowTitle(show, include_original_title=False, use_plex_formatting=False):
+def createShowTitle(show, include_original_title=False, use_plex_formatting=False) -> str:
   show_title = show['title']
 
   # Always include original title if using plex formatting, but we only want the series title, without the (1 af xxx)
@@ -820,7 +821,7 @@ def createShowTitle(show, include_original_title=False, use_plex_formatting=Fals
 
 RE_CAPTURE_YEAR_FROM_DESCRIPTION = re.compile(r' frá (?P<year>\d{4})', re.IGNORECASE)
 
-def createLocalFileName(show, include_original_title=False, use_plex_formatting=False, file_name_suffix=""):
+def createLocalFileName(show, include_original_title=False, use_plex_formatting=False, file_name_suffix="") -> str:
   # Create the show title
   show_title = createShowTitle(show, include_original_title, use_plex_formatting)
 
@@ -886,7 +887,7 @@ def createLocalFileName(show, include_original_title=False, use_plex_formatting=
   # Clean up any possible characters that would interfere with the local OS filename rules
   return sanitizeFileName(local_filename)
 
-def isLocalFileNameUnique(local_filename):
+def isLocalFileNameUnique(local_filename:str) -> bool:
   # Check to see if the filename specified already exists, must be a complete path
   ###########################
   # Using glob as I allow partial renaming of the file as long as the original part is left untouched
@@ -897,7 +898,7 @@ def isLocalFileNameUnique(local_filename):
 
 #
 # Locates the ffmpeg executable and returns a full path to it
-def findffmpeg(path_to_ffmpeg_install=None, working_dir=None):
+def findffmpeg(path_to_ffmpeg_install=None, working_dir=None) -> str:
   if not path_to_ffmpeg_install is None and os.path.isfile(path_to_ffmpeg_install):
     return path_to_ffmpeg_install
 
@@ -987,7 +988,7 @@ def getVodSchedule(existing_schedule, imdb_cache=None, imdb_orignal_titles=None)
   return schedule
 
 
-def requestsVodDataRetrieveWithRetries(graphdata):
+def requestsVodDataRetrieveWithRetries(graphdata:str) -> Any | None:
   retries_left = 3
 
   while True:
@@ -1017,7 +1018,7 @@ def requestsVodDataRetrieveWithRetries(graphdata):
 #    https://d38kdhuogyllre.cloudfront.net/fit-in/$$IMAGESIZE$$x/filters:quality(65)/hd_posters/878lr8-89tmhg.jpg
 # To:
 #    https://d38kdhuogyllre.cloudfront.net/fit-in/2048x/filters:quality(65)/hd_posters/878lr8-89tmhg.jpg
-def formatCoverArtResolutionMacro(rawsrc):
+def formatCoverArtResolutionMacro(rawsrc:str) -> str | None:
   if rawsrc is None or len(rawsrc) < 1:
     return None
 
@@ -1025,7 +1026,7 @@ def formatCoverArtResolutionMacro(rawsrc):
 
 #
 # Given a series id and program data, downloads all episodes available for that series
-def getVodSeriesSchedule(sid, _, imdb_cache, imdb_orignal_titles):
+def getVodSeriesSchedule(sid: str, _, imdb_cache, imdb_orignal_titles):
   schedule = {}
 
   # Perform two lookups, first to the API as this gives us a more complete
@@ -1229,7 +1230,7 @@ def getVodSeriesSchedule(sid, _, imdb_cache, imdb_orignal_titles):
 # Removes any season number related suffixes for a given series title
 # Ex. Monsurnar 1 => Monsurnar
 #     Hvolpasveitin IV => Hvolpasveitin
-def trimSeasonNumberSuffix(series_title):
+def trimSeasonNumberSuffix(series_title: str) -> str:
   suffixes = ROMAN_NUMERALS + list(range(0, 12))
   for suffix in suffixes:
     new_series_title = series_title.removesuffix(f' {suffix}')
@@ -1239,7 +1240,7 @@ def trimSeasonNumberSuffix(series_title):
   return series_title
 
 
-def getGroup(regex, group_name, haystack):
+def getGroup(regex:str, group_name:str, haystack:str) -> str | None:
   for match in re.finditer(regex, haystack):
     match_value = match.group(group_name).strip()
     if len(match_value) > 0:
@@ -1248,7 +1249,7 @@ def getGroup(regex, group_name, haystack):
 
 # Attempts to load the IMDB enhancment files from the given imdb path
 # this is optional and if the files are not present then this enhancement information will not be available
-def loadImdbOriginalTitles(args_imdbfolder):
+def loadImdbOriginalTitles(args_imdbfolder) -> dict[Any, Any]:
   imdb_title_cache = {}
 
   if not args_imdbfolder or args_imdbfolder is None:
