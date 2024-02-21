@@ -377,35 +377,23 @@ def downloadSubtitlesFiles(subtitles, local_video_filename, video_display_title,
 # Downloads a file using Requests
 # From: http://stackoverflow.com/a/16696317
 def download_file(url, local_filename, display_title, keeppartial = False ):
+  # TODO: note that display_title is not really used, would like to
+  # keep it for logging purposes later
   try:
     # NOTE the stream=True parameter
     r = __create_retry_session().get(url, stream=True)
-    
+
     # If the status is not success then terminate
     if( r.status_code != 200 ):
       return None
-    
-    total_size = int(r.headers['Content-Length'])
-    total_size_mb = str(int(total_size/1024.0/1024.0))
+
     completed_size = 0
-        
-    #if( total_size > 1024):
-    #  print("{0} | Total: {1} MB".format(color_title(display_title), total_size_mb))
-    #  printProgress(completed_size, total_size, prefix = 'Downloading:', suffix = 'Starting', barLength = 25)
-    
     with open(local_filename, 'wb') as f:
       for chunk in r.iter_content(chunk_size=1024): 
         if chunk: # filter out keep-alive new chunks
           f.write(chunk)
           completed_size += 1024
-    #      if( total_size > 1024):
-    #        printProgress(completed_size, total_size, prefix = 'Downloading:', suffix = 'Working ', barLength = 25)
-    
-    # Write a final completed line for the progress bar to signify that the operation is done
-    #printProgress(completed_size, completed_size, prefix = 'Downloading:', suffix = 'Complete', barLength = 25, color = False)
-    
-    # Write one extra line break after operation finishes otherwise the subsequent prints will end up in the same line
-    #sys.stdout.write('\n')
+
     return local_filename
   except:
     print(os.linesep) # Double new line as otherwise the error message is squished to the download progress
