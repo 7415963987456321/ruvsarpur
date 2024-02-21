@@ -16,7 +16,7 @@ Author: Sverrir Sigmundarson  info@sverrirs.com  https://www.sverrirs.com
 #   UnicodeEncodeError: 'charmap' codec can't encode character '\u2010': character maps to <undefined>
 # Set your console to use utf-8 encoding by issuing this statement:
 #    chcp 65001
-# The output will be a little garbled but at least you will be able to dump utf-8 data to the console 
+# The output will be a little garbled but at least you will be able to dump utf-8 data to the console
 
 # Requires the following
 #   pip install colorama
@@ -29,7 +29,7 @@ Author: Sverrir Sigmundarson  info@sverrirs.com  https://www.sverrirs.com
 #      For alternative install http://stackoverflow.com/a/33163704
 
 import argparse # Command-line argument parser
-import datetime # Formatting of date objects 
+import datetime # Formatting of date objects
 import glob # Used to do partial file path matching (when searching for already downloaded files) http://stackoverflow.com/a/2225582/779521
 import json # To store and load the tv schedule that has already been downloaded
 import ntpath # Used to extract file name from path for all platforms http://stackoverflow.com/a/8384788
@@ -51,8 +51,8 @@ from termcolor import colored # For shorthand color printing to the console, htt
 from requests.adapters import HTTPAdapter # For Retrying
 from requests.packages.urllib3.util.retry import Retry # For Retrying
 
-from itertools import (takewhile,repeat) # To count lines for the extremely large IMDB files 
-import subprocess # To execute shell commands 
+from itertools import (takewhile,repeat) # To count lines for the extremely large IMDB files
+import subprocess # To execute shell commands
 
 # Disable SSL warnings
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
@@ -106,7 +106,7 @@ USER_AGENT_HEADER = {'User-Agent':'Mozilla/5.0 (Windows NT 6.1; Win64; x64) Appl
 #   https://ruv-vod.akamaized.net/lokad/5240696T0/3600/index.m3u8
 RE_VOD_URL_PARTS = re.compile(r'(?P<urlprefix>.*)(?P<rest>\/\d{3,4}\/index\.m3u8)', re.IGNORECASE)
 
-# Parse just the base url from 
+# Parse just the base url from
 #   https://ruv-vod.akamaized.net/lokad/5240696T0/5240696T0.m3u8
 # resulting in vodbase being = https://ruv-vod.akamaized.net/lokad/5240696T0
 RE_VOD_BASE_URL = re.compile(r'(?P<vodbase>.*)\/(?P<rest>.*\.m3u8)', re.IGNORECASE)
@@ -121,10 +121,10 @@ def countLinesInFile(filename):
 
 # Checks to see if a file is older than a specific timedelta
 # See: https://stackoverflow.com/a/65412797/779521
-# Example: 
+# Example:
 #     isFileOlderThan(filename, timedelta(seconds=10))
 #     isFileOlderThan(filename, timedelta(days=14))
-def isFileOlderThan(file, delta): 
+def isFileOlderThan(file, delta):
     cutoff = datetime.datetime.utcnow() - delta
     mtime = datetime.datetime.utcfromtimestamp(os.path.getmtime(file))
     if mtime < cutoff:
@@ -156,11 +156,11 @@ def printProgress (iteration, total, prefix = '', suffix = '', decimals = 1, bar
       sys.stdout.write('\r %s |%s| %s %s' % (prefix, bar, percents+'%', suffix)),
 
     sys.stdout.flush()
-  except: 
+  except:
     pass # Ignore all errors when printing progress
 
 
-# Performs an optimistic lookup for the movie or show data based on its original title 
+# Performs an optimistic lookup for the movie or show data based on its original title
 # returns back enhancement information that can be used in PLEX to improve matching to official resources
 # Response from this API are, JSON on the form:
 #     {
@@ -224,7 +224,7 @@ def lookupItemInIMDB(item_title, item_year, item_type, sample_duration_sec, tota
 
   try:
     r = __create_retry_session().get(f"https://v2.sg.media-imdb.com/suggestion/x/{urllib.parse.quote(item_title)}.json?includeVideos=1")
-    if( r.status_code != 200 ): 
+    if( r.status_code != 200 ):
       return None # If the status is not success then terminate
   except:
     # If we have a failure in the IMDB api we do not want to fail RUV, just silently ignore this
@@ -290,7 +290,7 @@ def lookupItemInIMDB(item_title, item_year, item_type, sample_duration_sec, tota
 
 
   # Still no match, attempt to find one with a matching year if it is specified
-  if result is None and not item_year is None: 
+  if result is None and not item_year is None:
     result = next((obj for obj in matches if 'q' in obj and str(obj['q']).lower() in imdb_item_types and 'y' in obj and item_year in str(obj['y'])), None)
     found_via = "Same type and year, first match"
 
@@ -355,7 +355,7 @@ def downloadTVShowPoster(local_filename, item, output_path):
     episode_poster_filename = f"{episode_poster_name}.jpg"
     download_file(episode_poster_url, episode_poster_filename, f"Episode artwork for {item['title']}")
 
-  # Download the series poster  
+  # Download the series poster
   if series_poster_url:
     series_poster_dir = Path(local_filename).parent.parent.absolute() # Go up one directory (i.e. not in Season01 but in the main series folder)
 
@@ -388,7 +388,7 @@ def download_file(url, local_filename, display_title, keeppartial = False ):
 
     completed_size = 0
     with open(local_filename, 'wb') as f:
-      for chunk in r.iter_content(chunk_size=1024): 
+      for chunk in r.iter_content(chunk_size=1024):
         if chunk: # filter out keep-alive new chunks
           f.write(chunk)
           completed_size += 1024
@@ -434,13 +434,13 @@ def find_m3u8_playlist_url(item, display_title, video_quality):
 
   # Plan
   # 1. Download the file from the vod_url_full and check it's contents
-  #    the contents actually tell us if we are dealing with the old stream format which has multiple lines containing the different streams, 
-  #    ex. 
+  #    the contents actually tell us if we are dealing with the old stream format which has multiple lines containing the different streams,
+  #    ex.
   #       #EXT-X-STREAM-INF:CLOSED-CAPTIONS=NONE,BANDWIDTH=530000,RESOLUTION=426x240,CODECS="mp4a.40.2,avc1.640015",AUDIO="audio-aacl-50"
   #       asset-audio=50000-video=450000.m3u8?tlm=hls&streams=2022/02/06/2400kbps/5209577T0.mp4.m3u8:2400,2022/02/06/500kbps/5209577T0.mp4.m3u8:500,2022/02/06/800kbps/5209577T0.mp4.m3u8:800,2022/02/06/1200kbps/5209577T0.mp4.m3u8:1200,2022/02/06/3600kbps/5209577T0.mp4.m3u8:3600&AliasPass=ruv-vod-app-dcp-v4.secure.footprint.net
   #
   #    or if it is the new simpler format that only refers the index file
-  #    ex. 
+  #    ex.
   #       #EXT-X-STREAM-INF:BANDWIDTH=4406504,CODECS="avc1.640028,mp4a.40.2",RESOLUTION=1920x1080,FRAME-RATE=25.000,AUDIO="2@48000-mp4a-0"
   #       3600/index.m3u8
 
@@ -454,11 +454,11 @@ def find_m3u8_playlist_url(item, display_title, video_quality):
       return None
 
     # Assume the new format
-    url_formatted = '{0}/{1}/index.m3u8'.format(item['vod_url'], QUALITY_BITRATE[video_quality]['code']) 
+    url_formatted = '{0}/{1}/index.m3u8'.format(item['vod_url'], QUALITY_BITRATE[video_quality]['code'])
 
     # Check if this actually is the old format
     if request.text.find('.m3u8?tlm=hls&streams') > 0:
-      url_formatted = '{0}/asset-audio=50000-video={1}.m3u8'.format(item['vod_url'], QUALITY_BITRATE[video_quality]['bits'])       
+      url_formatted = '{0}/asset-audio=50000-video={1}.m3u8'.format(item['vod_url'], QUALITY_BITRATE[video_quality]['bits'])
 
     # Do the second request to get the actual stream data in the correct format
     request = __create_retry_session().get(url_formatted, stream=False, timeout=5, verify=False, headers=USER_AGENT_HEADER)
@@ -538,7 +538,7 @@ def download_m3u8_playlist_using_ffmpeg(playlist_url, playlist_fragments, local_
       ep_description = f"{ep_description.rstrip('.')}. Sýnt {str(videoInfo['showtime'])[8:10]}.{str(videoInfo['showtime'])[5:7]}.{str(videoInfo['showtime'])[:4]} kl.{(videoInfo['showtime'][11:16]).replace(':','.')}"
 
     prog_args.append("-metadata")
-    prog_args.append("{0}={1}".format('title', sanitizeFileName(videoInfo['title'] if ['is_movie', 'is_docu', 'is_sport', ] in videoInfo else videoInfo['episode_title']) )) #The title of this video. (String)	
+    prog_args.append("{0}={1}".format('title', sanitizeFileName(videoInfo['title'] if ['is_movie', 'is_docu', 'is_sport', ] in videoInfo else videoInfo['episode_title']) )) #The title of this video. (String)
     prog_args.append("-metadata")
     prog_args.append("{0}={1}".format('comment', 'ruvinfo:{0}:{1}'.format(str(videoInfo['pid']), str(videoInfo['sid']))))  #The program id and series id for the video, prefixed with ruvinfo for easier parsing
     prog_args.append("-metadata")
@@ -562,11 +562,11 @@ def download_m3u8_playlist_using_ffmpeg(playlist_url, playlist_fragments, local_
       prog_args.append("{0}={1}".format('season_number', int(videoInfo['season_num'])))  #The season number, in the range of 0 to 255 only
 
     prog_args.append("-metadata")
-    prog_args.append("{0}={1}".format('media_type', "Movie" if videoInfo['is_movie'] or videoInfo['is_docu'] else 'Sports' if videoInfo['is_sport'] else "TV Show"))  #The genre this video belongs to. (String)	
+    prog_args.append("{0}={1}".format('media_type', "Movie" if videoInfo['is_movie'] or videoInfo['is_docu'] else 'Sports' if videoInfo['is_sport'] else "TV Show"))  #The genre this video belongs to. (String)
 
     # Add the RUV specific identifier metadata, this can be used by other tooling to identify the entry
-    # Note: These tags get dropped by ffmpeg unless the use_metadata_tag switch is used, but when that is used the 
-    #       standard tags above stop working, so the solution is to encode this data into the comment field instead. 
+    # Note: These tags get dropped by ffmpeg unless the use_metadata_tag switch is used, but when that is used the
+    #       standard tags above stop working, so the solution is to encode this data into the comment field instead.
     #       shitty solution but the easiest to maintain compatibility
     #prog_args.append("-movflags")
     #prog_args.append("use_metadata_tags") # Necessary to turn on custom MP4 video tags (without it ffmpeg doesn't write tags it doesn't understand)
@@ -661,11 +661,11 @@ def parseArguments():
                                          type=str)
 
   parser.add_argument("-f", "--find", help="Searches the TV schedule for a program matching the text given",
-                               type=str) 
+                               type=str)
 
   parser.add_argument("--refresh", help="Refreshes the TV schedule data", action="store_true")
 
-  parser.add_argument("--imdbfolder", help="Folder storing the downloaded and unzipped title.basics.tsv database snapshot from IMDB, see https://www.imdb.com/interfaces/", 
+  parser.add_argument("--imdbfolder", help="Folder storing the downloaded and unzipped title.basics.tsv database snapshot from IMDB, see https://www.imdb.com/interfaces/",
                                       type=str)
 
   parser.add_argument("--incremental", help="Performs fast incremental intra-day refreshes. Setting this switch instructs the refresh mechanism to only download information for items that are new since the last full TV schedule refresh from the same day. This option has no effect and a full refresh is performed if the date of this refresh is newer than the latest refresh data. ", action="store_true")
@@ -696,7 +696,7 @@ def parseArguments():
 
   #parser.add_argument("--preferenglishsubs", help="Prefers downloading entries that have burnt in English subtitles available. This is true for some special schedule items. By default this is off.", action="store_true")
 
-  parser.add_argument("--ffmpeg",       help="Full path to the ffmpeg executable file", 
+  parser.add_argument("--ffmpeg",       help="Full path to the ffmpeg executable file",
                                         type=str)
 
   return parser.parse_args()
@@ -831,7 +831,7 @@ def createLocalFileName(show, include_original_title=False, use_plex_formatting=
       imdb_id_part = f" {{imdb-{imdb['id']}}}" if not imdb['id'] is None else ''
       imdb_year_part = f" ({imdb['year']})" if not imdb['year'] is None else ''
 
-    if ('is_movie' in show and show['is_movie'] is True) or ('is_docu' in show and show['is_docu'] is True): 
+    if ('is_movie' in show and show['is_movie'] is True) or ('is_docu' in show and show['is_docu'] is True):
       # Dealing with a movie for sure, it may be episodic and therefore should use the "partX" notation
       # described here: https://support.plex.tv/articles/naming-and-organizing-your-movie-media-files/#toc-3
       # Examples:
@@ -850,20 +850,20 @@ def createLocalFileName(show, include_original_title=False, use_plex_formatting=
 
       formatted_showtime = f"{str(show['showtime'])[8:10]}.{str(show['showtime'])[5:7]}.{str(show['showtime'])[:4]}"
       if (
-         not show['showtime'][:10] in sport_show_title and 
+         not show['showtime'][:10] in sport_show_title and
          not str(show['showtime'][:10]).replace('-','.') in sport_show_title and # Icelandic dates usually include dots and not dashes
          not formatted_showtime in sport_show_title  # Icelandic dates are usually on the form dd.mm.yyyy not yyyy.mm.dd
         ):
         sport_show_title = f"{sport_show_title} ({formatted_showtime})"
       return f"{sanitizeFileName(show_title)}{sep}Season 01{sep}{sport_show_title.replace(':','.')}{file_name_suffix}.mp4"
     elif( 'ep_num' in show and 'ep_total' in show and int(show['ep_total']) > 1):
-      # This is an episode 
+      # This is an episode
       # Plex formatting creates a local filename according to the rules defined here
       # https://support.plex.tv/articles/naming-and-organizing-your-tv-show-files/
-      # Note: We do not santitize the 
+      # Note: We do not santitize the
       # Examples:
       #   \show_title\Season 01\series_title (original-title) - s01e01.mp4
-      # or 
+      # or
       #    \show_title\Season 01\series_title (original-title) - showtime [pid].mp4
       return "{0}{sep}Season {4}{sep}{1}{2} - s{4}e{3}{file_name_suffix}{imdb_id_part}.mp4".format(sanitizeFileName(show_title), sanitizeFileName(series_title), original_title, str(show['ep_num']).zfill(2), str(show['season_num'] if 'season_num' in show else 1).zfill(2), sep=sep, imdb_id_part=imdb_id_part, file_name_suffix=file_name_suffix)
     else:
@@ -919,22 +919,22 @@ def getVodSchedule(existing_schedule, args_incremental_refresh=False, imdb_cache
 
   # Start with getting all the series available on RUV through their API, this gives us basic information about each of the series
   # https://api.ruv.is/api/programs/tv/all
-  # as of 2024-01-15 this API is now 
+  # as of 2024-01-15 this API is now
   # https://api.ruv.is/api/programs/featured/tv
 
-  # Now for each series we request the series information, to obtain more than the basic info, 
+  # Now for each series we request the series information, to obtain more than the basic info,
   # note: today there is a single episode returned which cannot be used when dealing with multi episode series, we should request all episodes as a second call
   # https://api.ruv.is/api/programs/get_ids/32978
 
   ruv_api_url_all = 'https://api.ruv.is/api/programs/featured/tv'
-  r = __create_retry_session().get(ruv_api_url_all)  
+  r = __create_retry_session().get(ruv_api_url_all)
   api_data = r.json()
 
   # Now the api returns everything categorised into panels
   all_panel_data= api_data['panels'] if 'panels' in api_data else None
 
   data = []
-  # Combine all 
+  # Combine all
   for panel_data in all_panel_data:
     if 'programs' in panel_data:
       data.extend(panel_data['programs'])
@@ -942,7 +942,7 @@ def getVodSchedule(existing_schedule, args_incremental_refresh=False, imdb_cache
   # Remove all duplicate series from the list
   data = list({item['id']:item for item in data}.values())
 
-  schedule = {}  
+  schedule = {}
 
   # If we are dealing with incremental refresh then start by storing our existing schedule
   if args_incremental_refresh:
@@ -963,15 +963,15 @@ def getVodSchedule(existing_schedule, args_incremental_refresh=False, imdb_cache
   print("{0} | Total: {1} series available".format(color_title('Downloading VOD schedule'), total_programs))
   printProgress(completed_programs, total_programs, prefix = 'Reading:', suffix = '', barLength = 25)
 
-  # Now iterate first through every group and for every thing in the group request all episodes for that 
+  # Now iterate first through every group and for every thing in the group request all episodes for that
   # item (there is no programmatic way of distinguishing between how many episodes there are)
   for program in panels:
     completed_programs += 1
 
-    #if str(program['id']) != '32957': 
+    #if str(program['id']) != '32957':
     #  continue
 
-    # If incremental, then check if we already have this series if we don't we want to add it, 
+    # If incremental, then check if we already have this series if we don't we want to add it,
     # if we have the series check if the web_available_episodes match if not then we want to re-add it
     if args_incremental_refresh:
       existing_vod_episodes_count = sum(type(schedule[p]) is dict and schedule[p]['sid'] == str(program['id']) for p in schedule)
@@ -985,9 +985,9 @@ def getVodSchedule(existing_schedule, args_incremental_refresh=False, imdb_cache
     try:
       # We want to not override existing items in the schedule dictionary in case they are downloaded again
       program_schedule = getVodSeriesSchedule(program['id'], program, imdb_cache, imdb_orignal_titles)
-      # This joining of the two dictionaries below is necessary to ensure that 
+      # This joining of the two dictionaries below is necessary to ensure that
       # the existing items are not overwritten, therefore schedule is appended to the new list, existing items overwriting any new items.
-      #schedule = dict(list(program_schedule.items()) + list(schedule.items())) 
+      #schedule = dict(list(program_schedule.items()) + list(schedule.items()))
       schedule.update(program_schedule) # Want to override existing keys again!
     except Exception as ex:
         print( "Unable to retrieve schedule for VOD program '{0}', no episodes will be available for download from this program.".format(program['title']))
@@ -1003,7 +1003,7 @@ def requestsVodDataRetrieveWithRetries(graphdata):
   while True:
     retries_left = retries_left - 1
     r = requests.get(
-      url='https://www.ruv.is/gql/'+graphdata, 
+      url='https://www.ruv.is/gql/'+graphdata,
       headers={'content-type': 'application/json', 'Referer' : 'https://www.ruv.is/sjonvarp', 'Origin': 'https://www.ruv.is' })
     data = json.loads(r.content.decode())
 
@@ -1022,10 +1022,10 @@ def requestsVodDataRetrieveWithRetries(graphdata):
 
 #
 # Replaces image size macro in cover art URLs with a high res version
-# example: 
+# example:
 # From:
 #    https://d38kdhuogyllre.cloudfront.net/fit-in/$$IMAGESIZE$$x/filters:quality(65)/hd_posters/878lr8-89tmhg.jpg
-# To: 
+# To:
 #    https://d38kdhuogyllre.cloudfront.net/fit-in/2048x/filters:quality(65)/hd_posters/878lr8-89tmhg.jpg
 def formatCoverArtResolutionMacro(rawsrc):
   if rawsrc is None or len(rawsrc) < 1:
@@ -1036,13 +1036,13 @@ def formatCoverArtResolutionMacro(rawsrc):
 #
 # Given a series id and program data, downloads all episodes available for that series
 def getVodSeriesSchedule(sid, _, imdb_cache, imdb_orignal_titles):
-  schedule = {}  
+  schedule = {}
 
   # Perform two lookups, first to the API as this gives us a more complete information about the series, but unfortunately no episode data
   ruv_api_url_sid = 'https://api.ruv.is/api/programs/program/{0}/all'.format(sid)
 
-  r = __create_retry_session().get(ruv_api_url_sid)  
-  prog = r.json()  
+  r = __create_retry_session().get(ruv_api_url_sid)
+  prog = r.json()
   if r.status_code != 200 or prog is None or not 'episodes' in prog or len(prog['episodes']) < 1:
     return schedule
 
@@ -1084,8 +1084,8 @@ def getVodSeriesSchedule(sid, _, imdb_cache, imdb_orignal_titles):
     imdb_cache_entry = imdb_cache[str(sid)]
     imdb_result = imdb_cache_entry['imdb']
 
-  # 
-  # Attempt to find the entry in IMDB if possible, but only for foreign titles, i.e. movies and shows that 
+  #
+  # Attempt to find the entry in IMDB if possible, but only for foreign titles, i.e. movies and shows that
   # have a foreign title set
   if imdb_result is None and not series_type is None and len(series_type) > 0 and not 'born' in prog['cat_slugs'] :
     # Attempt to extract the year from the description field
@@ -1113,8 +1113,8 @@ def getVodSeriesSchedule(sid, _, imdb_cache, imdb_orignal_titles):
     if not imdb_result is None:
       imdb_cache[str(sid)] = {
         'series_id': sid,
-        'original-title': foreign_title, 
-        'series_title': series_title, 
+        'original-title': foreign_title,
+        'series_title': series_title,
         'imdb': imdb_result
       }
 
@@ -1132,7 +1132,7 @@ def getVodSeriesSchedule(sid, _, imdb_cache, imdb_orignal_titles):
     # Fix the episode description if needed
     episode['description'] = ' '.join(episode['description']) if type(episode['description']) is list else episode['description']
     # Fix episode title
-    if episode['title'] is None: 
+    if episode['title'] is None:
       #episode['title'] = series_title
       episode['title'] = ''
 
@@ -1187,7 +1187,7 @@ def getVodSeriesSchedule(sid, _, imdb_cache, imdb_orignal_titles):
     entry['ep_total'] = getGroup(RE_CAPTURE_VOD_EPNUM_FROM_TITLE, 'ep_total', episode['title'])
     if not entry['ep_total'] is None:
       entry['ep_total'] = str(entry['ep_total'])
-    else: 
+    else:
       entry['ep_total'] = str(len(prog['episodes']))
 
     # Attempt to parse out the season number, start with 1 as the default
@@ -1219,7 +1219,7 @@ def getVodSeriesSchedule(sid, _, imdb_cache, imdb_orignal_titles):
 
       # If the episode name is the date then we only append the timeportion
       if( entry['episode_title'] == f"{str(entry['showtime'])[8:10]}.{str(entry['showtime'])[5:7]}.{str(entry['showtime'])[:4]}"):
-        entry['title'] = f"{entry['series_title']} ({entry['episode_title']}) kl.{(str(entry['showtime'])[11:16]).replace(':','.')}"  
+        entry['title'] = f"{entry['series_title']} ({entry['episode_title']}) kl.{(str(entry['showtime'])[11:16]).replace(':','.')}"
       else: # we add the date as well
         # Add the subtitle into the final title of the episode, i.e. to include dates or the teams playing, use the full show time at the end with the HH:mm
         entry['title'] = f"{entry['series_title']} ({entry['episode_title']}) {str(entry['showtime'])[8:10]}.{str(MONTH_NAMES[int(entry['showtime'][5:7])])} kl.{(str(entry['showtime'])[11:16]).replace(':','.')}"
@@ -1301,7 +1301,7 @@ def loadImdbOriginalTitles(args_imdbfolder):
       if( curr_line == 1 or curr_line % 10000 == 0):
         printProgress(curr_line, total_lines, prefix = 'Reading Original Titles:', suffix = f" | item {curr_line:,} of {total_lines:,}", barLength = 25)
 
-      (tconst, titleType, primaryTitle, originalTitle, isAdult, startYear, endYear, runtimeMinutes, genres) = line.split('\t')      
+      (tconst, titleType, primaryTitle, originalTitle, isAdult, startYear, endYear, runtimeMinutes, genres) = line.split('\t')
 
       # Skip all lines that have an invalid IDENTIFIER or have '\N' missing indicator in critical fields
       if not tconst.startswith('tt') or originalTitle == '\\N' or primaryTitle == '\\N' or startYear == '\\N':
@@ -1350,12 +1350,12 @@ def runMain():
         imdb_cache = {}
 
       # Only clear out the schedule if we are not dealing with an incremental update
-      # or if the dates don't match anymore 
+      # or if the dates don't match anymore
       if not args.incremental or schedule['date'].date() < today or args.force:
         schedule = {}
 
       # Downloading the full VOD available schedule as well, signal an incremental update if the schedule object has entries in it
-      schedule = getVodSchedule(schedule, len(schedule) > 0, imdb_cache, imdb_orignal_titles) 
+      schedule = getVodSchedule(schedule, len(schedule) > 0, imdb_cache, imdb_orignal_titles)
 
       # Save the tv schedule as the most current one, save it to ensure we format the today date
       if len(schedule) > 1 :
@@ -1430,7 +1430,7 @@ def runMain():
       local_filename = createLocalFileName(item, args.originaltitle, args.plex, args.suffix)
 
       # Create the display title for the current episode (used in console output)
-      display_title = "{0} of {1}: {2}".format(curr_item, total_items, createShowTitle(item, args.originaltitle)) 
+      display_title = "{0} of {1}: {2}".format(curr_item, total_items, createShowTitle(item, args.originaltitle))
       curr_item += 1 # Count the file
 
       # If the output directory is set then check if it exists and create it if it is not
@@ -1449,7 +1449,7 @@ def runMain():
       # First download the URL for the listing if needed
       if not 'file' in item or item['file'] is None or len(item['file']) < 1 or not str(item['file']).startswith(RUV_URL):
         ep_graphdata = '?operationName=getProgramType&variables={"id":'+str(item['sid'])+',"episodeId":["'+str(item['pid'])+'"]}&extensions={"persistedQuery":{"version":1,"sha256Hash":"9d18a07f82fcd469ad52c0656f47fb8e711dc2436983b53754e0c09bad61ca29"}}'
-        data = requestsVodDataRetrieveWithRetries(ep_graphdata)     
+        data = requestsVodDataRetrieveWithRetries(ep_graphdata)
         if data is None or len(data) < 1:
           print("Error: Could not retrieve episode download url, unable to download VOD details, skipping "+item['title'])
           continue
@@ -1491,20 +1491,20 @@ def runMain():
         # Before we attempt to download the file we should make sure we're not accidentally overwriting an existing file
         if( not args.force and not args.checklocal):
           # So, check for the existence of a file with the same name, if one is found then attempt to give
-          # our new file a different name and check again (append date and time), if still not unique then 
+          # our new file a different name and check again (append date and time), if still not unique then
           # create file name with guid, if still not unique then fail!
           if( not isLocalFileNameUnique(local_filename) ):
             # Check with date
             local_filename = "{0}_{1}.mp4".format(local_filename.split(".mp4")[0], datetime.datetime.now().strftime("%Y-%m-%d"))
             if( not isLocalFileNameUnique(local_filename)):
               local_filename = "{0}_{1}.mp4".format(local_filename.split(".mp4")[0], str(uuid.uuid4()))
-              if( not isLocalFileNameUnique(local_filename)):      
+              if( not isLocalFileNameUnique(local_filename)):
                 print("Error: unabled to create a local file name for '{0}', check your output folder (pid={1})".format(color_title(display_title), item['pid']))
                 continue
 
         # If the checklocal option is enabled then we don't want to try to download unless force is set
         if( not args.force and args.checklocal and not isLocalFileNameUnique(local_filename) ):
-          # Store the id as already recorded and save to the file 
+          # Store the id as already recorded and save to the file
           print("'{0}' found locally and marked as already recorded (pid={1})".format(color_title(display_title), item['pid']))
           appendNewPidAndSavePreviouslyRecordedShows(item['pid'], previously_recorded, previously_recorded_file_name)
           continue
@@ -1525,19 +1525,19 @@ def runMain():
         result = download_m3u8_playlist_using_ffmpeg(playlist_data['url'], playlist_data['fragments'], local_filename, display_title, args, item)
         if( not result is None ):
           # if everything was OK then save the pid as successfully downloaded
-          appendNewPidAndSavePreviouslyRecordedShows(item['pid'], previously_recorded, previously_recorded_file_name) 
+          appendNewPidAndSavePreviouslyRecordedShows(item['pid'], previously_recorded, previously_recorded_file_name)
 
       # Attempt to download artworks if available but only when plex is selected
       if args.novideo:
         print("Downloading only artworks and subtitle files")
 
-      if args.plex : 
+      if args.plex :
         if( item['is_movie'] or item['is_docu']):
           downloadMoviePoster(local_filename, display_title, item, Path(args.output))
-        else: 
+        else:
           downloadTVShowPoster(local_filename, display_title, item, Path(args.output))
 
-      # Attempt to download any subtitles if available 
+      # Attempt to download any subtitles if available
       if not item['subtitles'] is None and len(item['subtitles']) > 0:
         try:
           downloadSubtitlesFiles(item['subtitles'], local_filename)
