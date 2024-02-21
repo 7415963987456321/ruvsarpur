@@ -1236,15 +1236,14 @@ def getVodSeriesSchedule(sid, _, imdb_cache, imdb_orignal_titles):
 
 #
 # Removes any season number related suffixes for a given series title
-# Ex. Monsurnar 1 => Monsurnar   
+# Ex. Monsurnar 1 => Monsurnar
 #     Hvolpasveitin IV => Hvolpasveitin
 def trimSeasonNumberSuffix(series_title):
-  prefixes = ROMAN_NUMERALS + list(range(0, 12))
-  for prefix in prefixes:
-    new_series_title = series_title.removesuffix(f' {prefix}')
+  suffixes = ROMAN_NUMERALS + list(range(0, 12))
+  for suffix in suffixes:
+    new_series_title = series_title.removesuffix(f' {suffix}')
     if len(new_series_title) < len(series_title):
       return new_series_title
-    series_title = new_series_title
 
   return series_title
 
