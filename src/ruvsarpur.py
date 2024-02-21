@@ -367,9 +367,8 @@ def downloadTVShowPoster(local_filename, item, output_path):
         download_file(series_poster_url, series_poster_filename, f"Series artwork for {item['series_title']}")
     
 # Downloads all available subtitle files
-def downloadSubtitlesFiles(subtitles, local_video_filename, video_display_title, video_item):
+def downloadSubtitlesFiles(subtitles, local_video_filename):
   for subtitle in subtitles:
-
     # See naming guidelines https://support.plex.tv/articles/200471133-adding-local-subtitles-to-your-media/
     subtitle_filename = "{0}.{1}.vtt".format( local_video_filename.split(".mp4")[0], subtitle['name'])
     download_file(subtitle['value'], subtitle_filename, "{1}: Subtitles for: {0}".format(Path(local_video_filename).stem, subtitle['name']))
@@ -1542,7 +1541,7 @@ def runMain():
       # Attempt to download any subtitles if available 
       if not item['subtitles'] is None and len(item['subtitles']) > 0:
         try:
-          downloadSubtitlesFiles(item['subtitles'], local_filename, display_title, item)
+          downloadSubtitlesFiles(item['subtitles'], local_filename)
         except Exception as ex:
           print("Error: Could not download subtitle files for item, "+item['title'])
           continue
