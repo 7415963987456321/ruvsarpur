@@ -154,7 +154,7 @@ def printProgress (iteration, total, prefix = '', suffix = '', decimals = 1, bar
     else:
       bar             = '=' * filledLength + '-' * (barLength - filledLength)
       sys.stdout.write('\r %s |%s| %s %s' % (prefix, bar, percents+'%', suffix)),
-          
+
     sys.stdout.flush()
   except: 
     pass # Ignore all errors when printing progress
@@ -267,7 +267,7 @@ def lookupItemInIMDB(item_title, item_year, item_type, sample_duration_sec, tota
   if result is None and 1 == sum(('l' in obj and fuzz.ratio( item_title_lower, obj['l'].lower() ) > 85) for obj in matches):
     result = next((obj for obj in matches if 'l' in obj and fuzz.ratio( item_title_lower, obj['l'].lower() ) > 85), None)
     found_via = "Similar primary title, single match"
-  
+
   # If there is a single slightly fuzzy name match, we pick that
   if result is None and 1 == sum(('lo' in obj and fuzz.ratio( item_title_lower, obj['lo'].lower() ) > 85) for obj in matches):
     result = next((obj for obj in matches if 'lo' in obj and fuzz.ratio( item_title_lower, obj['lo'].lower() ) > 85), None)
@@ -365,7 +365,7 @@ def downloadTVShowPoster(local_filename, item, output_path):
       # Do not override a poster that is already there
       if not Path(series_poster_filename).exists():
         download_file(series_poster_url, series_poster_filename, f"Series artwork for {item['series_title']}")
-    
+
 # Downloads all available subtitle files
 def downloadSubtitlesFiles(subtitles, local_video_filename):
   for subtitle in subtitles:
@@ -625,7 +625,7 @@ def download_m3u8_playlist_using_ffmpeg(playlist_url, playlist_fragments, local_
   if ret.returncode == 0:
     return local_filename
   return None
-  
+
 def printTvShowDetails(args, show):
   if( not 'pid' in show ):
     return
@@ -639,13 +639,13 @@ def printTvShowDetails(args, show):
     for desc_line in textwrap.wrap(show['desc'], width=60):
       print( "           "+color_description(desc_line) )
   print("")
-  
+
 def parseArguments():
   parser = argparse.ArgumentParser()
-  
+
   parser.add_argument("-o", "--output", help="The path to the folder where the downloaded files should be stored",
                                         type=str)
-  
+
   parser.add_argument("--suffix", help="Optional suffix to append to the output filename (useful if for some reason some files are named the same), NOTE make sure the suffix starts with a space character!",
                                   default="",
                                   type=str)
@@ -659,7 +659,7 @@ def parseArguments():
                                          choices=list(QUALITY_BITRATE.keys()),
                                          default="HD1080",
                                          type=str)
-  
+
   parser.add_argument("-f", "--find", help="Searches the TV schedule for a program matching the text given",
                                type=str) 
 
@@ -673,15 +673,15 @@ def parseArguments():
   parser.add_argument("--plex", help="Creates Plex Media Server compatible file names and folder structures. See https://support.plex.tv/articles/naming-and-organizing-your-tv-show-files/", action="store_true")
 
   parser.add_argument("--force", help="Forces the program to re-download shows", action="store_true")
-  
+
   parser.add_argument("--list", help="Only lists the items found but nothing is downloaded", action="store_true")
-  
+
   parser.add_argument("--desc", help="Displays show description text when available", action="store_true")
 
   parser.add_argument("--keeppartial", help="Keep partially downloaded files if the download is interrupted (default is to delete partial files)", action="store_true")
 
   parser.add_argument("--checklocal", help="Checks to see if a local file with the same name already exists. If it exists then it is not re-downloaded but it's pid is stored in the recorded log (useful if moving between machines or if recording history is lost)'", action="store_true")
-  
+
   parser.add_argument("-d", "--debug", help="Prints out extra debugging information while script is running", action="store_true")
 
   parser.add_argument("-p","--portable", help="Saves the tv schedule and the download log in the current directory instead of {0}".format(LOG_DIR), action="store_true")
@@ -700,7 +700,7 @@ def parseArguments():
                                         type=str)
 
   return parser.parse_args()
- 
+
 # Appends the config directory to config file names
 def createFullConfigFileName(portable, file_name):
   if portable :
@@ -747,14 +747,14 @@ def saveImdbCache(imdb_cache, imdb_cache_file_name):
 
   with open(imdb_cache_file_name, 'w+', encoding='utf-8') as out_file:
     out_file.write(json.dumps(imdb_cache, ensure_ascii=False, sort_keys=True, indent=2*' '))
-  
+
 def getExistingJsonFile(file_name):
   try:
     tv_file = Path(file_name)
     if tv_file.is_file():
       with tv_file.open('r+',encoding='utf-8') as in_file:
         existing = json.load(in_file)
-      
+
       return existing
     else:
       return None
@@ -768,17 +768,17 @@ def getExistingTvSchedule(tv_file_name):
     if tv_file.is_file():
       with tv_file.open('r+',encoding='utf-8') as in_file:
         existing = json.load(in_file)
-      
+
       # format the date field
       existing['date'] = datetime.datetime.strptime(existing['date'], '%Y-%m-%d')
-      
+
       return existing
     else:
       return None
   except:
     print("Could not open existing tv schedule, downloading new one (invalid file at "+tv_file_name+")")
     return None
-    
+
 def sanitizeFileName(local_filename, sep=" "):
   #These are symbols that are not "kosher" on a NTFS filesystem.
   local_filename = re.sub(r"[\"/:<>|?*\n\r\t\x00]", sep, local_filename)
@@ -798,18 +798,18 @@ def createShowTitle(show, include_original_title=False, use_plex_formatting=Fals
 
   # Always include original title if using plex formatting, but we only want the series title, without the (1 af xxx)
   if( use_plex_formatting ):
-    
+
     # If plex we always want to get out of the default title as the default includes the (1 af 2) suffix
     show_title = show['series_title']
 
     # Append the original if it is available (usually that contains more accurate season info than the icelandic title)
     if( 'original-title' in show and not show['original-title'] is None ):
       show_title = "{0} - {1}".format(show['series_title'], rchop(show['original-title'], ROMAN_NUMERALS))
-  
+
   # If not plex then adhere to the original title flag if set
   elif( include_original_title and 'original-title' in show and not show['original-title'] is None ):
     return "{0} - {1}".format(show['title'], show['original-title'])
-    
+
   return show_title
 
 RE_CAPTURE_YEAR_FROM_DESCRIPTION = re.compile(r' frá (?P<year>\d{4})', re.IGNORECASE)
@@ -847,7 +847,7 @@ def createLocalFileName(show, include_original_title=False, use_plex_formatting=
       # Example
       #   \show_title\Season 2022\title - showtime[:10].mp4 unless the showtime is already present in the title of the episode
       sport_show_title = show['title']
-      
+
       formatted_showtime = f"{str(show['showtime'])[8:10]}.{str(show['showtime'])[5:7]}.{str(show['showtime'])[:4]}"
       if (
          not show['showtime'][:10] in sport_show_title and 
@@ -868,7 +868,7 @@ def createLocalFileName(show, include_original_title=False, use_plex_formatting=
       return "{0}{sep}Season {4}{sep}{1}{2} - s{4}e{3}{file_name_suffix}{imdb_id_part}.mp4".format(sanitizeFileName(show_title), sanitizeFileName(series_title), original_title, str(show['ep_num']).zfill(2), str(show['season_num'] if 'season_num' in show else 1).zfill(2), sep=sep, imdb_id_part=imdb_id_part, file_name_suffix=file_name_suffix)
     else:
       return "{0}{sep}{1}{2} - {3} - [{4}]{file_name_suffix}{imdb_id_part}.mp4".format(sanitizeFileName(show_title), sanitizeFileName(series_title), original_title, sanitizeFileName(show['showtime'][:10]), sanitizeFileName(show['pid']), sep=sep, imdb_id_part=imdb_id_part, file_name_suffix=file_name_suffix)
-      
+
   else:
     # Create the local filename, if not multiple episodes then
     # append the date and pid to the filename to avoid conflicts
@@ -899,13 +899,13 @@ def findffmpeg(path_to_ffmpeg_install=None, working_dir=None):
   bin_dist = os.path.join(working_dir, "..","bin","ffmpeg.exe" if platform.system() == 'Windows' else 'ffmpeg')
   if os.path.isfile(bin_dist):
     return str(Path(bin_dist).resolve())
-  
+
   # Attempt to find ffmpeg in the environment
   try:
       return utilities.get_ffmpeg_location()
   except Exception:
       pass # Ignoring the exception
-  
+
   # Throw an error
   raise ValueError('Could not locate FFMPEG install, please use the --ffmpeg switch to specify the path to the ffmpeg executable on your system.')
 
@@ -950,7 +950,7 @@ def getVodSchedule(existing_schedule, args_incremental_refresh=False, imdb_cache
 
   if r.status_code != 200  or data is None or len(data) < 1:
     return schedule
-  
+
   if not data or len(data) <=0:
     return schedule
 
@@ -959,7 +959,7 @@ def getVodSchedule(existing_schedule, args_incremental_refresh=False, imdb_cache
 
   completed_programs = 0
   total_programs = len(panels)
-  
+
   print("{0} | Total: {1} series available".format(color_title('Downloading VOD schedule'), total_programs))
   printProgress(completed_programs, total_programs, prefix = 'Reading:', suffix = '', barLength = 25)
 
@@ -1045,7 +1045,7 @@ def getVodSeriesSchedule(sid, _, imdb_cache, imdb_orignal_titles):
   prog = r.json()  
   if r.status_code != 200 or prog is None or not 'episodes' in prog or len(prog['episodes']) < 1:
     return schedule
-  
+
   # Fix the image and portrait image fields as they come pre-formatted from the API
   prog['image'] = prog['image'].replace('/480x/', '/$$IMAGESIZE$$x/') if 'image' in prog and not prog['image'] is None else None
   prog['portrait_image'] = prog['portrait_image'].replace('/480x/', '/$$IMAGESIZE$$x/') if 'portrait_image' in prog and not prog['portrait_image'] is None else None
@@ -1097,7 +1097,7 @@ def getVodSeriesSchedule(sid, _, imdb_cache, imdb_orignal_titles):
     # Determine if multiepisodic and how many episodes there are
     detected_num = getGroup(RE_CAPTURE_VOD_EPNUM_FROM_TITLE, 'ep_total', prog['episodes'][0]['title'] if not prog['episodes'][0]['title'] is None else series_title )
     total_episode_num = max(int(prog['web_available_episodes']), int(detected_num) if not detected_num is None else 1 ) if 'multiple_episodes' in prog and prog['multiple_episodes'] else 1
-    
+
     imdb_result = None
     # first check the foreign title, this is most likely to result in a match
     if imdb_result is None and not foreign_title is None:
@@ -1183,7 +1183,7 @@ def getVodSeriesSchedule(sid, _, imdb_cache, imdb_orignal_titles):
       entry['ep_num'] = str(entry['ep_num'])
     else:
       entry['ep_num'] = str(total_episodes)
-    
+
     entry['ep_total'] = getGroup(RE_CAPTURE_VOD_EPNUM_FROM_TITLE, 'ep_total', episode['title'])
     if not entry['ep_total'] is None:
       entry['ep_total'] = str(entry['ep_total'])
@@ -1276,7 +1276,7 @@ def loadImdbOriginalTitles(args_imdbfolder):
   # Check the age of the file on disk and print out a warning if it is more than 6 months old
   if isFileOlderThan(imdb_basics_file_path, datetime.timedelta(days=183)):
     print(color_warn(f"The '{imdb_basics_file_path}' file is older than 6 months, consider downloading a newer 'title.basics.tsv' file from https://www.imdb.com/interfaces/"))
-  
+
 #  title.basics.tsv.gz - Contains the following information for titles:
 #    tconst (string) - alphanumeric unique identifier of the title
 #    titleType (string) – the type/format of the title (e.g. movie, short, tvseries, tvepisode, video, etc)
@@ -1319,12 +1319,12 @@ def loadImdbOriginalTitles(args_imdbfolder):
   print()
 
   return imdb_title_cache
-    
+
 # The main entry point for the script
 def runMain():
   try:
     init() # Initialize the colorama library
-    
+
     today = datetime.date.today()
 
     # Construct the argument parser for the commandline
@@ -1333,15 +1333,15 @@ def runMain():
     # Create the full filenames for the config files
     previously_recorded_file_name = createFullConfigFileName(args.portable,PREV_LOG_FILE)
     tv_schedule_file_name = createFullConfigFileName(args.portable,TV_SCHEDULE_LOG_FILE)
-    
+
     # Get information about already downloaded episodes
     previously_recorded = getPreviouslyRecordedShows(previously_recorded_file_name)
 
     # Get an existing tv schedule if possible
     schedule = getExistingTvSchedule(tv_schedule_file_name)
-    
+
     if( args.refresh or schedule is None  ):
-    
+
       # Only load the IMDB data if we are refreshing the schedule
       imdb_orignal_titles = loadImdbOriginalTitles(args.imdbfolder)
       imdb_cache_file_name = createFullConfigFileName(args.portable, IMDB_CACHE_FILE)
@@ -1353,10 +1353,10 @@ def runMain():
       # or if the dates don't match anymore 
       if not args.incremental or schedule['date'].date() < today or args.force:
         schedule = {}
-      
+
       # Downloading the full VOD available schedule as well, signal an incremental update if the schedule object has entries in it
       schedule = getVodSchedule(schedule, len(schedule) > 0, imdb_cache, imdb_orignal_titles) 
-    
+
       # Save the tv schedule as the most current one, save it to ensure we format the today date
       if len(schedule) > 1 :
         saveCurrentTvSchedule(schedule, tv_schedule_file_name)
@@ -1367,16 +1367,16 @@ def runMain():
     if( args.debug ):
       for key, schedule_item in schedule.items():
         printTvShowDetails(args, schedule_item)
-      
+
     # Now determine what to download
     download_list = []
-    
+
     for key, schedule_item in schedule.items():
-    
+
       # Skip any items that aren't show items
       if key == 'date' or not 'pid' in schedule_item:
         continue
-      
+
       candidate_to_add = None
       # if the series id is set then find all shows belonging to that series
       if( args.sid is not None ):
@@ -1405,30 +1405,30 @@ def runMain():
       # Now process the adding of the show if all the filter criteria were satisified
       if( candidate_to_add is not None ):
           download_list.append(candidate_to_add)
-      
+
     total_items = len(download_list)
     if( total_items <= 0 ):
       print(f"Nothing found to download for {color_title(args.find) if args.find is not None else color_sid(args.sid) if args.sid is not None else color_pid(args.pid) if args.pid is not None else color_title('[No search term entered]')}")
       sys.exit(0)
-      
+
     print( "Found {0} show(s)".format(total_items, ))
-      
+
     # Sort the download list by show name and then by showtime
     download_list = sorted(download_list, key=itemgetter('pid', 'title'))
     download_list = sorted(download_list, key=itemgetter('showtime'), reverse=True)
-    
+
     # Now a special case for the list operation
     # Simply show a list of all the episodes found and then terminate
     if( args.list ):
       for item in download_list:
         printTvShowDetails(args, item)
       sys.exit(0)
-    
+
     curr_item = 1
     for item in download_list:
       # Get a valid name for the save file
       local_filename = createLocalFileName(item, args.originaltitle, args.plex, args.suffix)
-      
+
       # Create the display title for the current episode (used in console output)
       display_title = "{0} of {1}: {2}".format(curr_item, total_items, createShowTitle(item, args.originaltitle)) 
       curr_item += 1 # Count the file
@@ -1453,7 +1453,7 @@ def runMain():
         if data is None or len(data) < 1:
           print("Error: Could not retrieve episode download url, unable to download VOD details, skipping "+item['title'])
           continue
-        
+
         if not data or not 'data' in data or not 'Program' in data['data'] or not 'episodes' in data['data']['Program'] or len(data['data']['Program']['episodes']) < 1:
           print("Error: Could not retrieve episode download url, VOD did not return any data, skipping "+item['title'])
           continue
@@ -1513,7 +1513,7 @@ def runMain():
         # We will rely on ffmpeg to do the playlist download and merging for us
         # the tool is much better suited to this than manually merging as there
         # are always some corruption issues in the merged stream if done in code
-        
+
         # Get the correct playlist url
         playlist_data = find_m3u8_playlist_url(item, display_title, args.quality)
         if playlist_data is None:
@@ -1544,10 +1544,10 @@ def runMain():
         except Exception as ex:
           print("Error: Could not download subtitle files for item, "+item['title'])
           continue
-    
+
   finally:
     deinit() #Deinitialize the colorama library
-    
+
 
 # If the script file is called by itself then execute the main function
 if __name__ == '__main__':
