@@ -327,9 +327,10 @@ def lookupItemInIMDB(item_title, item_year, item_type, sample_duration_sec, tota
 
 # Downloads the image poster for a movie
 # See naming guidelines: https://support.plex.tv/articles/200220677-local-media-assets-movies/#toc-2
-def downloadMoviePoster(local_filename, display_title, item, output_path):
-  poster_url = item['portrait_image'] if 'portrait_image' in item and not item['portrait_image'] is None else item['series_image'] if 'series_image' in item and not item['series_image'] is None else None
-  if poster_url is None:
+def downloadMoviePoster(local_filename, item, output_path):
+  poster_url = item.get('portrait_image', item.get('series_image', None))
+
+  if not poster_url:
     return
 
   poster_dir = Path(local_filename).parent.absolute()
@@ -342,7 +343,6 @@ def downloadMoviePoster(local_filename, display_title, item, output_path):
   poster_filename = f"{poster_dir}{sep}poster.jpg"
 
   download_file(poster_url, poster_filename, f"Movie artwork for {item['title']}")
-  
 
 # Downloads the image and season posters for episodic content
 def downloadTVShowPoster(local_filename, item, output_path):
