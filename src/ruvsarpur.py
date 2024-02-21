@@ -730,11 +730,12 @@ def getPreviouslyRecordedShows(rec_file_name):
   else:
     return []
 
-def saveCurrentTvSchedule(schedule,tv_file_name):
-  today = datetime.date.today()
+def saveCurrentTvSchedule(schedule, tv_file_name):
+  if len(schedule) <= 1:
+    return
 
   # Format the date field
-  schedule['date'] = today.strftime('%Y-%m-%d')
+  schedule['date'] = datetime.date.today().strftime('%Y-%m-%d')
 
   #make sure that the log directory exists
   os.makedirs(os.path.dirname(tv_file_name), exist_ok=True)
@@ -743,6 +744,9 @@ def saveCurrentTvSchedule(schedule,tv_file_name):
     out_file.write(json.dumps(schedule, ensure_ascii=False, sort_keys=True, indent=2*' '))
 
 def saveImdbCache(imdb_cache, imdb_cache_file_name):
+  if len(imdb_cache) <= 0:
+    return
+
   os.makedirs(os.path.dirname(imdb_cache_file_name), exist_ok=True)
 
   with open(imdb_cache_file_name, 'w+', encoding='utf-8') as out_file:
@@ -1358,11 +1362,9 @@ def runMain():
       schedule = getVodSchedule(schedule, len(schedule) > 0, imdb_cache, imdb_orignal_titles)
 
       # Save the tv schedule as the most current one, save it to ensure we format the today date
-      if len(schedule) > 1 :
-        saveCurrentTvSchedule(schedule, tv_schedule_file_name)
+      saveCurrentTvSchedule(schedule, tv_schedule_file_name)
 
-      if len(imdb_cache) > 0:
-        saveImdbCache(imdb_cache, imdb_cache_file_name)
+      saveImdbCache(imdb_cache, imdb_cache_file_name)
 
     if( args.debug ):
       for key, schedule_item in schedule.items():
